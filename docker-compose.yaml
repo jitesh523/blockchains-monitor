@@ -1,0 +1,34 @@
+# docker-compose.yaml
+# Example for modular, stateless microservices & queue architecture
+version: '3.8'
+services:
+  api:
+    build: .
+    command: ["python3", "app.py"]
+    environment:
+      - ENV=production
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  event_processor:
+    build: .
+    command: ["python3", "event_processor.py"]
+    depends_on:
+      - redis
+    environment:
+      - QUEUE=events
+    restart: unless-stopped
+
+  ml_service:
+    build: .
+    command: ["python3", "ml_service.py"]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+# For real cloud-native deployments, use managed DB, queue, horizontal scaling, API gateway, Prometheus/Grafana sidecars.
+

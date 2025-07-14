@@ -1,3 +1,36 @@
+# Blockchain Upgrade Monitor
+
+## Secret Management
+- **Never commit your real secrets!**
+- Copy `.env.example` to `.env` and fill with your credentials.
+- Use environment variables or secure secret managers (Vault, AWS Secrets Manager) in production.
+
+## Alerts
+- Alert delivery supports: Email, Webhook, Slack, Discord (see `alerts.py` — add service credentials in `.env`).
+- Add your keys and webhook URLs to `.env` (template in `.env.example`).
+
+## Auto-Mitigation
+- Predefine mitigation actions in `mitigation.py` (stubs provided).
+- Integrate with on-chain contracts and bots as needed.
+
+## Input Sanitization
+- Validate all incoming data and user input. DO NOT parse blockchain logs or external feeds directly without validation.
+
+## DDOS/Rate Limits
+- Implement `429` retry and client-side/backpressure logic. Use reverse proxies like Cloudflare for public endpoints.
+
+## API Mock & Test
+- Run `python mock_mode.py` for simulated data feeds if APIs are unavailable.
+- See `tests/` for minimum required coverage and CI info.
+
+## Documentation
+- See `openapi.yaml` for API documentation (serves at `/docs` in development).
+- Changelog and known issues in `CHANGELOG.md`.
+
+---
+
+For further enhancements, please refer to the architecture comments in the respective Python/compose files.
+
 # 🔗 Blockchain Protocol Upgrade Monitor
 
 A high-performance protocol upgrade monitoring system that tracks blockchain network events, predicts volatility and liquidity shifts, and provides execution guidance for trading strategies. This system connects to multiple data sources including blockchain APIs, social media feeds, and market data streams to provide real-time risk assessment.

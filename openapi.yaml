@@ -1,0 +1,29 @@
+openapi: 3.0.0
+info:
+  title: Blockchain Upgrade Monitor API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+paths:
+  /events:
+    get:
+      summary: Get blockchain events (risk/upgrades)
+      responses:
+        '200':
+          description: Successful Response
+  /risk:
+    post:
+      summary: Post risk scenario for simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scenario:
+                  type: string
+      responses:
+        '200':
+          description: Simulated risk result
+

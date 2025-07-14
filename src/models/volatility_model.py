@@ -101,3 +101,28 @@ async def get_protocol_volatility(protocol_name: str, days: int = 180, horizon: 
     except Exception as e:
         logger.error(f"Error getting protocol volatility for {protocol_name}: {e}")
         return {'volatility': np.nan, 'error': str(e)}
+
+def format_volatility(volatility: float) -> str:
+    """Format volatility value for display, handling NaN values."""
+    if volatility is None or (isinstance(volatility, float) and np.isnan(volatility)):
+        return "--"
+    return f"{volatility:.1f}%"
+
+def format_metric_value(value: float, suffix: str = "", fallback: str = "--") -> str:
+    """Format any metric value for display, handling NaN and None values."""
+    if value is None or (isinstance(value, float) and np.isnan(value)):
+        return fallback
+    if isinstance(value, (int, float)):
+        return f"{value:.1f}{suffix}"
+    return str(value)
+
+def get_volatility_color(volatility: float) -> str:
+    """Get color indicator for volatility level."""
+    if volatility is None or (isinstance(volatility, float) and np.isnan(volatility)):
+        return "⚪"
+    if volatility < 30:
+        return "🟢"
+    elif volatility < 60:
+        return "🟡"
+    else:
+        return "🔴"

@@ -127,25 +127,55 @@ class EnhancedTimeline:
                             st.markdown(f"• {factor}")
                 
                 with col2:
-                    # Get volatility data
+                    # Get volatility data with proper formatting
                     try:
                         vol_data = await get_protocol_volatility(proposal['protocol'].lower())
-                        volatility = vol_data.get('volatility', 'N/A')
-                        if volatility != 'N/A':
-                            st.metric("Volatility", f"{volatility:.1f}%")
-                        else:
-                            st.metric("Volatility", "N/A")
-                    except:
-                        st.metric("Volatility", "N/A")
+                        volatility = vol_data.get('volatility')
+                        
+                        # Import formatting functions
+                        from src.models.volatility_model import format_volatility, get_volatility_color
+                        
+                        formatted_volatility = format_volatility(volatility)
+                        vol_color = get_volatility_color(volatility)
+                        
+                        # Use HTML with title attribute for tooltip
+                        volatility_html = f"""
+                        <div title="{vol_data.get('data_points', 0)} data points used for forecast">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Volatility</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">{vol_color} {formatted_volatility}</div>
+                        </div>
+                        """
+                        st.markdown(volatility_html, unsafe_allow_html=True)
+                        
+                    except Exception as e:
+                        st.markdown("""
+                        <div title="Unable to fetch volatility data">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Volatility</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">⚪ --</div>
+                        </div>
+                        """, unsafe_allow_html=True)
                     
-                    # Sentiment analysis
+                    # Sentiment analysis with improved formatting
                     mock_tweets = self._get_mock_tweets(proposal['protocol'])
                     sentiment_score = analyze_sentiment(mock_tweets)
                     sentiment_label = self._get_sentiment_label(sentiment_score)
-                    st.metric("Sentiment", sentiment_label, delta=f"{sentiment_score:.2f}")
                     
-                    # Votes
-                    st.metric("Total Votes", f"{proposal['votes']:,}")
+                    sentiment_html = f"""
+                    <div title="Based on {len(mock_tweets)} social media posts">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Sentiment</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">{sentiment_label}</div>
+                    </div>
+                    """
+                    st.markdown(sentiment_html, unsafe_allow_html=True)
+                    
+                    # Votes with formatting
+                    votes_html = f"""
+                    <div title="Total governance votes cast">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Total Votes</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">{proposal['votes']:,}</div>
+                    </div>
+                    """
+                    st.markdown(votes_html, unsafe_allow_html=True)
                 
                 with col3:
                     # Risk assessment

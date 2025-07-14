@@ -16,7 +16,8 @@ from src.ui.enhanced_timeline import render_enhanced_timeline
 from src.ui.execution_guidance import render_execution_guidance
 from src.ui.live_network_feed import render_live_network_feed, render_network_overview
 from config.config import Config
-from src.ui.theme import apply_theme, create_animated_title, create_theme_toggle
+from src.ui.theme import apply_theme, create_animated_title, create_theme_toggle, display_theme_audit
+from src.ui.data_visualizations import render_analytics_dashboard, render_sidebar_sparklines
 
 # Configure logging
 logging.basicConfig(
@@ -42,19 +43,24 @@ def main():
         st.error("❌ Configuration validation failed. Please check your environment variables.")
         st.stop()
 
-    # Apply theme and create title
-    apply_theme()
+    # Create theme toggle and get current theme preference
+    current_theme = create_theme_toggle()
+    
+    # Apply theme based on user preference
+    apply_theme(current_theme)
     create_animated_title("Blockchain Protocol Upgrade Monitor", "Assessing risk and opportunities in real-time")
-    create_theme_toggle()
     
     # Render live network feed in sidebar
     render_live_network_feed()
+    
+    # Render sidebar sparklines
+    render_sidebar_sparklines()
     
     # Create navigation
     st.sidebar.title("🔗 Protocol Monitor")
     page = st.sidebar.selectbox(
         "Navigation",
-        ["📊 Upgrade Timeline", "📈 Risk Dashboard", "🎯 Execution Guidance", "⚙️ Settings"]
+        ["📊 Upgrade Timeline", "📈 Risk Dashboard", "📊 Analytics", "🎯 Execution Guidance", "⚙️ Settings"]
     )
     
     if page == "📊 Upgrade Timeline":
@@ -80,6 +86,9 @@ def main():
         render_network_overview()
         st.info("Advanced risk analytics coming soon...")
     
+    elif page == "📊 Analytics":
+        render_analytics_dashboard()
+    
     elif page == "🎯 Execution Guidance":
         st.title("🎯 Execution Guidance")
         
@@ -89,7 +98,15 @@ def main():
     
     elif page == "⚙️ Settings":
         st.title("⚙️ Settings")
-        st.info("Settings page coming soon...")
+        
+        # Theme audit section
+        display_theme_audit()
+        
+        st.markdown("---")
+        
+        # Additional settings
+        st.subheader("🔧 Application Settings")
+        st.info("Additional settings coming soon...")
 
 if __name__ == "__main__":
     main()

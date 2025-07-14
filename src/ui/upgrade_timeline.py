@@ -181,7 +181,7 @@ def create_proposal_table(proposals):
             st.write(prop['created'].strftime("%m/%d/%Y"))
         
         with col5:
-            # Volatility forecast
+            # Volatility forecast with improved formatting
             protocol_name = prop['protocol']
             if protocol_name not in st.session_state.volatility_cache:
                 try:
@@ -194,17 +194,12 @@ def create_proposal_table(proposals):
             vol_info = st.session_state.volatility_cache[protocol_name]
             volatility = vol_info.get('volatility', np.nan)
             
-            if not np.isnan(volatility):
-                # Color code volatility: green (low), yellow (medium), red (high)
-                if volatility < 30:
-                    vol_color = "🟢"
-                elif volatility < 60:
-                    vol_color = "🟡"
-                else:
-                    vol_color = "🔴"
-                st.write(f"{vol_color} {volatility:.1f}%")
-            else:
-                st.write("⚪ N/A")
+            # Import formatting functions
+            from src.models.volatility_model import format_volatility, get_volatility_color
+            
+            formatted_volatility = format_volatility(volatility)
+            vol_color = get_volatility_color(volatility)
+            st.write(f"{vol_color} {formatted_volatility}")
         
         with col6:
             # Sentiment analysis
