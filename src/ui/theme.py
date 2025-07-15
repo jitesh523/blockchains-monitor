@@ -709,13 +709,19 @@ def inject_custom_css(dark_mode: bool = True):
 
 def create_animated_title(title: str, subtitle: str = None):
     """Create an animated title with gradient effect."""
+    import html as html_module
+    
+    # Escape HTML content to prevent raw HTML from being rendered
+    escaped_title = html_module.escape(title)
+    
     html = f"""
-    <div class="main-title">{title}</div>
+    <div class="main-title">{escaped_title}</div>
     """
     if subtitle:
+        escaped_subtitle = html_module.escape(subtitle)
         html += f"""
         <div style="text-align: center; color: var(--text-secondary); margin-top: -1rem; margin-bottom: 2rem;">
-            {subtitle}
+            {escaped_subtitle}
         </div>
         """
     

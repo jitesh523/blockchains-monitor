@@ -1,34 +1,106 @@
 # docker-compose.yaml
-# Example for modular, stateless microservices & queue architecture
+# Production-ready microservices with PostgreSQL, Redis, and monitoring
 version: '3.8'
 services:
-  api:
+  # Main Streamlit application
+  streamlit_app:
     build: .
-    command: ["python3", "app.py"]
+    command: ["streamlit", "run", "production_app.py"]
     environment:
       - ENV=production
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/blockchain_monitor
+      - REDIS_URL=redis://redis:6379/0
+      - WEBSOCKET_PORT=8000
+      - HEALTH_PORT=8001
     depends_on:
+      - postgres
       - redis
+    ports:
+      - "8501:8501"
     restart: unless-stopped
 
-  event_processor:
+  # WebSocket server for real-time updates
+  websocket_server:
     build: .
-    command: ["python3", "event_processor.py"]
-    depends_on:
-      - redis
+    command: ["python3", "src/services/websocket_server.py"]
     environment:
-      - QUEUE=events
+      - WEBSOCKET_PORT=8000
+    ports:
+      - "8000:8000"
     restart: unless-stopped
 
-  ml_service:
+  # Health check API
+  health_api:
     build: .
-    command: ["python3", "ml_service.py"]
+    command: ["python3", "production_app.py"]
+    environment:
+      - HEALTH_PORT=8001
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/blockchain_monitor
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8001:8001"
     restart: unless-stopped
 
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=blockchain_monitor
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # Redis cache
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
 
-# For real cloud-native deployments, use managed DB, queue, horizontal scaling, API gateway, Prometheus/Grafana sidecars.
+  # Optional: Prometheus monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    restart: unless-stopped
+
+  # Optional: Grafana dashboard
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+
+# For cloud deployments, use managed services:
+# - AWS RDS for PostgreSQL
+# - AWS ElastiCache for Redis
+# - AWS ECS/EKS for container orchestration
+# - CloudWatch for monitoring
 
