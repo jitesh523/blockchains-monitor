@@ -1,14 +1,15 @@
 """
 Redis caching service for API responses with exponential backoff and circuit breaker.
 """
-import redis
-import json
-import time
-import logging
-from typing import Any, Optional, Callable
-from functools import wraps
 import hashlib
+import json
+import logging
 import os
+import time
+from functools import wraps
+from typing import Any, Callable, Optional
+
+import redis
 
 logger = logging.getLogger(__name__)
 
@@ -22,17 +23,17 @@ class CacheService:
         except Exception as e:
             logger.warning(f"Redis connection failed: {e}. Using in-memory fallback.")
             self.redis_client = None
-    
+
     def _generate_key(self, prefix: str, *args, **kwargs) -> str:
         """Generate cache key from function arguments"""
         key_data = f"{prefix}:{args}:{sorted(kwargs.items())}"
         return hashlib.md5(key_data.encode()).hexdigest()
-    
+
     def get(self, key: str) -> Optional[Any]:
         """Get value from cache"""
         if not self.redis_client:
             return None
-        
+
         try:
             value = self.redis_client.get(key)
             if value:
@@ -40,24 +41,24 @@ class CacheService:
         except Exception as e:
             logger.warning(f"Cache get failed: {e}")
         return None
-    
+
     def set(self, key: str, value: Any, ttl: int = 300) -> bool:
         """Set value in cache with TTL"""
         if not self.redis_client:
             return False
-        
+
         try:
             self.redis_client.setex(key, ttl, json.dumps(value, default=str))
             return True
         except Exception as e:
             logger.warning(f"Cache set failed: {e}")
             return False
-    
+
     def delete(self, key: str) -> bool:
         """Delete key from cache"""
         if not self.redis_client:
             return False
-        
+
         try:
             self.redis_client.delete(key)
             return True
@@ -75,13 +76,13 @@ def cached(prefix: str, ttl: int = 300):
         def wrapper(*args, **kwargs):
             # Generate cache key
             cache_key = cache_service._generate_key(prefix, *args, **kwargs)
-            
+
             # Try to get from cache first
             cached_result = cache_service.get(cache_key)
             if cached_result is not None:
                 logger.info(f"Cache hit for {func.__name__}")
                 return cached_result
-            
+
             # Execute function and cache result
             try:
                 result = func(*args, **kwargs)
@@ -91,7 +92,7 @@ def cached(prefix: str, ttl: int = 300):
             except Exception as e:
                 logger.error(f"Function {func.__name__} failed: {e}")
                 raise
-        
+
         return wrapper
     return decorator
 
@@ -106,13 +107,13 @@ def exponential_backoff(max_retries: int = 3, base_delay: float = 1.0):
                 except Exception as e:
                     if attempt == max_retries - 1:
                         raise
-                    
+
                     delay = base_delay * (2 ** attempt)
                     logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {e}. Retrying in {delay}s...")
                     time.sleep(delay)
-            
+
             raise Exception(f"All {max_retries} attempts failed for {func.__name__}")
-        
+
         return wrapper
     return decorator
 
@@ -123,7 +124,7 @@ class CircuitBreaker:
         self.failure_count = 0
         self.last_failure_time = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
-    
+
     def call(self, func: Callable, *args, **kwargs):
         """Execute function with circuit breaker pattern"""
         if self.state == "OPEN":
@@ -132,7 +133,7 @@ class CircuitBreaker:
                 logger.info(f"Circuit breaker HALF_OPEN for {func.__name__}")
             else:
                 raise Exception(f"Circuit breaker OPEN for {func.__name__}")
-        
+
         try:
             result = func(*args, **kwargs)
             if self.state == "HALF_OPEN":
@@ -140,15 +141,15 @@ class CircuitBreaker:
                 self.failure_count = 0
                 logger.info(f"Circuit breaker CLOSED for {func.__name__}")
             return result
-        
+
         except Exception as e:
             self.failure_count += 1
             self.last_failure_time = time.time()
-            
+
             if self.failure_count >= self.failure_threshold:
                 self.state = "OPEN"
                 logger.warning(f"Circuit breaker OPEN for {func.__name__}")
-            
+
             raise e
 
 # Global circuit breakers for different services
@@ -166,8 +167,8 @@ def with_circuit_breaker(service_name: str):
             breaker = circuit_breakers.get(service_name)
             if not breaker:
                 return func(*args, **kwargs)
-            
+
             return breaker.call(func, *args, **kwargs)
-        
+
         return wrapper
     return decorator

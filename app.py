@@ -3,21 +3,22 @@
 Main application launcher for the Blockchain Protocol Upgrade Monitor.
 """
 
-import streamlit as st
 import asyncio
 import logging
-import sys
 import os
+import sys
+
+import streamlit as st
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
+from config.config import Config
+from src.ui.data_visualizations import render_analytics_dashboard, render_sidebar_sparklines
 from src.ui.enhanced_timeline import render_enhanced_timeline
 from src.ui.execution_guidance import render_execution_guidance
 from src.ui.live_network_feed import render_live_network_feed, render_network_overview
-from config.config import Config
 from src.ui.theme import apply_theme, create_animated_title, create_theme_toggle, display_theme_audit
-from src.ui.data_visualizations import render_analytics_dashboard, render_sidebar_sparklines
 
 # Configure logging
 logging.basicConfig(
@@ -37,7 +38,7 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
+
     # Validate configuration
     if not Config.validate_config():
         st.error("❌ Configuration validation failed. Please check your environment variables.")
@@ -45,65 +46,65 @@ def main():
 
     # Create theme toggle and get current theme preference
     current_theme = create_theme_toggle()
-    
+
     # Apply theme based on user preference
     apply_theme(current_theme)
     create_animated_title("Blockchain Protocol Upgrade Monitor", "Assessing risk and opportunities in real-time")
-    
+
     # Render live network feed in sidebar
     render_live_network_feed()
-    
+
     # Render sidebar sparklines
     render_sidebar_sparklines()
-    
+
     # Create navigation
     st.sidebar.title("🔗 Protocol Monitor")
     page = st.sidebar.selectbox(
         "Navigation",
         ["📊 Upgrade Timeline", "📈 Risk Dashboard", "📊 Analytics", "🎯 Execution Guidance", "⚙️ Settings"]
     )
-    
+
     if page == "📊 Upgrade Timeline":
         # Create a three-column layout
         col1, col2, col3 = st.columns([2, 4, 2])
-        
+
         with col1:
             st.header("📊 Network Status")
             render_network_overview()
-        
+
         with col2:
             st.header("📋 Protocol Upgrades")
             asyncio.run(render_enhanced_timeline())
-        
+
         with col3:
             st.header("🎯 Execution Guidance")
             # Mock risk score for demonstration
             example_risk_score = 68.5
             render_execution_guidance(example_risk_score)
-    
+
     elif page == "📈 Risk Dashboard":
         st.title("📈 Risk Dashboard")
         render_network_overview()
         st.info("Advanced risk analytics coming soon...")
-    
+
     elif page == "📊 Analytics":
         render_analytics_dashboard()
-    
+
     elif page == "🎯 Execution Guidance":
         st.title("🎯 Execution Guidance")
-        
+
         # Mock risk score input
         risk_score = st.slider("Adjust Risk Score", 0.0, 100.0, 50.0)
         render_execution_guidance(risk_score)
-    
+
     elif page == "⚙️ Settings":
         st.title("⚙️ Settings")
-        
+
         # Theme audit section
         display_theme_audit()
-        
+
         st.markdown("---")
-        
+
         # Additional settings
         st.subheader("🔧 Application Settings")
         st.info("Additional settings coming soon...")

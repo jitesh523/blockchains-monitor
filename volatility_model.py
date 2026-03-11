@@ -3,10 +3,10 @@ volatility_model.py
 Fetches ETH price data from CoinGecko and runs a GARCH(1,1) volatility forecast.
 Requires: pandas, requests, arch. Install with pip if not already present.
 """
-import requests
+
 import pandas as pd
+import requests
 from arch import arch_model
-import datetime
 
 COINGECKO_API = "https://api.coingecko.com/api/v3"
 

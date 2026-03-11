@@ -76,6 +76,8 @@ A high-performance protocol upgrade monitoring system that tracks blockchain net
 - Node.js (for additional dependencies)
 - Git
 
+> Tip (macOS): Prophet and Torch can be heavy to install. See notes below if you hit build issues.
+
 ### Quick Start
 
 1. **Clone the repository**
@@ -100,6 +102,13 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your API keys
 ```
+
+You can run in a limited, no-keys environment by setting:
+
+```bash
+export DEMO_MODE=true
+```
+This allows the UI to load with mocked/limited integrations if some keys are missing.
 
 5. **Run the application**
 ```bash
@@ -182,3 +191,28 @@ This project is licensed under the MIT License.
 ---
 
 Built with ❤️ for the DeFi community
+
+## 🧰 macOS install notes
+
+- Torch CPU wheels (if default install fails):
+  ```bash
+  pip install --force-reinstall --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+  ```
+- Prophet may require Xcode Command Line Tools and compiler toolchain:
+  ```bash
+  xcode-select --install
+  ```
+  If Prophet remains problematic and is optional for you, consider deferring it by commenting it out in `requirements.txt`, or using `statsmodels` alternatives.
+
+## 🌐 Environment variables
+
+Key variables in `.env`:
+- `ETHERSCAN_API_KEY`, `INFURA_PROJECT_ID`, etc.
+- `DEMO_MODE` (true/false): allow UI to run with missing keys (limited/mocked integrations).
+- `TALLY_API_KEY` (optional): Bearer token for Tally API.
+- `WEBSOCKET_CORS_ORIGINS`: comma-separated origins for WebSocket CORS (e.g., `http://localhost,http://localhost:8501`).
+
+For Docker, you can also set:
+- `WEBSOCKET_PORT` (default 8000)
+- `HEALTH_PORT` (default 8001)
+- `DATABASE_URL`, `REDIS_URL`

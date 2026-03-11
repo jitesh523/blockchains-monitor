@@ -1,7 +1,8 @@
+
+import httpx
 import pandas as pd
 from prophet import Prophet
-import httpx
-from datetime import datetime
+
 
 async def get_tvl_history(protocol_slug: str, days: int = 90) -> pd.DataFrame:
     """Fetch historical TVL data for a protocol."""

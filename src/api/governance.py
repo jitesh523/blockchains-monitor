@@ -1,7 +1,9 @@
-import logging
 import asyncio
-from typing import List, Dict, Any, Optional
+import logging
+import os
 from datetime import datetime
+from typing import Any, Dict, List
+
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -31,31 +33,38 @@ class GovernanceClient:
             "variables": {"space": space}
         }
 
-        async with httpx.AsyncClient() as client:
-            for _ in range(3):  # Retry logic
+        # Use explicit timeout and exponential backoff
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for attempt in range(3):
                 try:
                     response = await client.post(SNAPSHOT_GRAPHQL_ENDPOINT, json=query)
-                    if response.status_code == 200:
-                        data = response.json()
-                        return data.get("data", {}).get("proposals", [])
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"Snapshot API error: {e}")
-                await asyncio.sleep(1)
+                    response.raise_for_status()
+                    data = response.json()
+                    return data.get("data", {}).get("proposals", [])
+                except (httpx.HTTPStatusError, httpx.RequestError) as e:
+                    logger.warning(f"Snapshot API error (attempt {attempt+1}/3): {e}")
+                    await asyncio.sleep(2 ** attempt)
         return []
 
     async def fetch_tally_proposals(self, organization: str) -> List[Dict[str, Any]]:
         """Fetch recent proposals from Tally for a given organization."""
         url = f"{TALLY_API_ENDPOINT}/proposals?orgId={organization}&limit=5"
 
-        async with httpx.AsyncClient() as client:
-            for _ in range(3):
+        headers = {}
+        tally_api_key = os.getenv("TALLY_API_KEY")
+        if tally_api_key:
+            # Tally often expects a Bearer token
+            headers["Authorization"] = f"Bearer {tally_api_key}"
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for attempt in range(3):
                 try:
-                    response = await client.get(url)
-                    if response.status_code == 200:
-                        return response.json().get("data", [])
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"Tally API error: {e}")
-                await asyncio.sleep(1)
+                    response = await client.get(url, headers=headers)
+                    response.raise_for_status()
+                    return response.json().get("data", [])
+                except (httpx.HTTPStatusError, httpx.RequestError) as e:
+                    logger.warning(f"Tally API error (attempt {attempt+1}/3): {e}")
+                    await asyncio.sleep(2 ** attempt)
         return []
 
     def normalize_snapshot_proposal(self, proposal: Dict[str, Any]) -> Dict[str, Any]:
@@ -69,10 +78,17 @@ class GovernanceClient:
 
     def normalize_tally_proposal(self, proposal: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize Tally proposal data."""
+        created_raw = proposal.get("created")
+        created_dt: datetime
+        try:
+            created_dt = datetime.fromisoformat(created_raw) if created_raw else datetime.utcnow()
+        except Exception:
+            created_dt = datetime.utcnow()
+
         return {
             "title": proposal.get("title", "Unknown"),
             "status": proposal.get("status", "Unknown"),
-            "created": datetime.fromisoformat(proposal.get("created")),
+            "created": created_dt,
             "votes": proposal.get("totalVotes", 0)
         }
 

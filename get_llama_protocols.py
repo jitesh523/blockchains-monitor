@@ -4,6 +4,7 @@ Fetch and print protocol slugs from DeFi Llama for diagnostic use.
 """
 import requests
 
+
 def main():
     url = "https://api.llama.fi/protocols"
     resp = requests.get(url)

@@ -35,7 +35,7 @@ if __name__ == "__main__":
     is_contrast_sufficient = check_contrast(primary_light, background_light)
     print(f"Contrast ratio: {ratio:.2f}:1")
     print(f"Contrast sufficient: {is_contrast_sufficient}")
-    
+
     # Test with potential poor contrast
     yellow = '#FFD43B'
     white = '#FFFFFF'

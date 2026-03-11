@@ -1,14 +1,14 @@
 """
 Database service with PostgreSQL integration for historical data storage.
 """
-import asyncio
-import asyncpg
 import json
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
 import os
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any, Dict, List
+
+import asyncpg
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +40,11 @@ class RiskEvent:
 class DatabaseService:
     def __init__(self, database_url: str = None):
         self.database_url = database_url or os.getenv(
-            'DATABASE_URL', 
+            'DATABASE_URL',
             'postgresql://user:password@localhost:5432/blockchain_monitor'
         )
         self.pool = None
-    
+
     async def connect(self):
         """Initialize database connection pool"""
         try:
@@ -59,7 +59,7 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Database connection failed: {e}")
             raise
-    
+
     async def create_tables(self):
         """Create database tables if they don't exist"""
         tables = [
@@ -121,7 +121,7 @@ class DatabaseService:
             )
             """
         ]
-        
+
         # Create indexes
         indexes = [
             "CREATE INDEX IF NOT EXISTS idx_price_data_token_timestamp ON price_data(token, timestamp)",
@@ -130,16 +130,16 @@ class DatabaseService:
             "CREATE INDEX IF NOT EXISTS idx_protocol_upgrades_protocol ON protocol_upgrades(protocol)",
             "CREATE INDEX IF NOT EXISTS idx_tvl_data_protocol_timestamp ON tvl_data(protocol, timestamp)"
         ]
-        
+
         async with self.pool.acquire() as conn:
             for table in tables:
                 await conn.execute(table)
-            
+
             for index in indexes:
                 await conn.execute(index)
-        
+
         logger.info("Database tables created successfully")
-    
+
     async def insert_price_data(self, data: PriceData):
         """Insert price data into database"""
         async with self.pool.acquire() as conn:
@@ -150,7 +150,7 @@ class DatabaseService:
                 """,
                 data.token, data.price, data.volume_24h, data.market_cap, data.timestamp
             )
-    
+
     async def insert_sentiment_data(self, data: SentimentData):
         """Insert sentiment data into database"""
         async with self.pool.acquire() as conn:
@@ -159,10 +159,10 @@ class DatabaseService:
                 INSERT INTO sentiment_data (source, content, sentiment_score, timestamp, metadata)
                 VALUES ($1, $2, $3, $4, $5)
                 """,
-                data.source, data.content, data.sentiment_score, data.timestamp, 
+                data.source, data.content, data.sentiment_score, data.timestamp,
                 json.dumps(data.metadata or {})
             )
-    
+
     async def insert_risk_event(self, event: RiskEvent):
         """Insert risk event into database"""
         async with self.pool.acquire() as conn:
@@ -174,7 +174,7 @@ class DatabaseService:
                 event.event_type, event.protocol, event.risk_score, event.description,
                 event.timestamp, json.dumps(event.metadata or {})
             )
-    
+
     async def get_price_history(self, token: str, days: int = 30) -> List[Dict]:
         """Get price history for a token"""
         async with self.pool.acquire() as conn:
@@ -188,7 +188,7 @@ class DatabaseService:
                 token, days
             )
             return [dict(row) for row in rows]
-    
+
     async def get_sentiment_trend(self, hours: int = 24) -> List[Dict]:
         """Get sentiment trend for the last N hours"""
         async with self.pool.acquire() as conn:
@@ -206,7 +206,7 @@ class DatabaseService:
                 hours
             )
             return [dict(row) for row in rows]
-    
+
     async def get_risk_events(self, protocol: str = None, days: int = 7) -> List[Dict]:
         """Get recent risk events"""
         async with self.pool.acquire() as conn:
@@ -231,7 +231,7 @@ class DatabaseService:
                     days
                 )
             return [dict(row) for row in rows]
-    
+
     async def get_protocol_stats(self) -> Dict[str, Any]:
         """Get aggregated protocol statistics"""
         async with self.pool.acquire() as conn:
@@ -245,7 +245,7 @@ class DatabaseService:
                 ORDER BY event_count DESC
                 """
             )
-            
+
             # Get recent sentiment trend
             sentiment_trend = await conn.fetch(
                 """
@@ -258,39 +258,39 @@ class DatabaseService:
                 ORDER BY day ASC
                 """
             )
-            
+
             return {
                 'protocol_events': [dict(row) for row in protocol_events],
                 'sentiment_trend': [dict(row) for row in sentiment_trend],
                 'last_updated': datetime.now().isoformat()
             }
-    
+
     async def cleanup_old_data(self, retention_days: int = 90):
         """Clean up old data based on retention policy"""
         cutoff_date = datetime.now() - timedelta(days=retention_days)
-        
+
         async with self.pool.acquire() as conn:
             # Clean up old price data
             await conn.execute(
                 "DELETE FROM price_data WHERE timestamp < $1",
                 cutoff_date
             )
-            
+
             # Clean up old sentiment data
             await conn.execute(
                 "DELETE FROM sentiment_data WHERE timestamp < $1",
                 cutoff_date
             )
-            
+
             # Keep risk events longer (1 year)
             risk_cutoff = datetime.now() - timedelta(days=365)
             await conn.execute(
                 "DELETE FROM risk_events WHERE timestamp < $1",
                 risk_cutoff
             )
-        
+
         logger.info(f"Cleaned up data older than {retention_days} days")
-    
+
     async def close(self):
         """Close database connection pool"""
         if self.pool:

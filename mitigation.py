@@ -4,6 +4,7 @@ Stub module for future auto-mitigation support (e.g., triggering smart contract 
 """
 from typing import Dict
 
+
 def auto_mitigate(event: Dict, strategy: str = "none"):
     """
     Placeholder for auto-mitigation action (e.g., hedging, pausing contracts).

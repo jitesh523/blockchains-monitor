@@ -3,13 +3,13 @@ pipeline.py
 Complete monitoring pipeline: runs sentiment, volatility, liquidity, and triggers alerts if thresholds are breached.
 Requires: requests, pandas, arch, prophet, transformers, torch, smtplib, python-dotenv (for .env, optional)
 """
-import os
-import logging
 import datetime
-from sentiment_analyzer import get_tweets, analyze_tweet_sentiment
-from volatility_model import fetch_eth_prices, compute_garch_volatility
-from liquidity_model import fetch_tvl, forecast_tvl
+import logging
+
 from alerts import alert_user
+from liquidity_model import fetch_tvl, forecast_tvl
+from sentiment_analyzer import analyze_tweet_sentiment, get_tweets
+from volatility_model import compute_garch_volatility, fetch_eth_prices
 
 # Optionally load .env
 try:

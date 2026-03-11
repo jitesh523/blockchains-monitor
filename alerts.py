@@ -3,9 +3,10 @@ alerts.py
 Stub module for push-based alerting. In production, implement services for email, webhooks, and Slack/Discord alerts.
 """
 import os
-import requests
 import smtplib
-from typing import Dict, Any
+from typing import Any, Dict
+
+import requests
 
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 SMTP_SERVER = os.getenv("SMTP_SERVER")
