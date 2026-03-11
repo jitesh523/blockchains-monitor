@@ -2,10 +2,11 @@
 WebSocket server for real-time updates using FastAPI and WebSockets.
 """
 import logging
+import os
+from typing import List
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
-import os
 
 logger = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@
 Shared test fixtures for blockchains-monitor tests.
 """
 
-import sys
 import os
+import sys
 from datetime import datetime, timedelta
 
 import pytest

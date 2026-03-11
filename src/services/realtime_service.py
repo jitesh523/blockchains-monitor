@@ -5,11 +5,13 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Any
-from src.services.database_service import db_service, PriceData, SentimentData, RiskEvent
-from src.services.websocket_server import broadcast_to_clients
-from src.services.cache_service import cached, exponential_backoff, with_circuit_breaker
+from typing import Any, Dict
+
 import requests
+
+from src.services.cache_service import cached, exponential_backoff, with_circuit_breaker
+from src.services.database_service import PriceData, RiskEvent, SentimentData, db_service
+from src.services.websocket_server import broadcast_to_clients
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +19,12 @@ class RealtimeService:
     def __init__(self):
         self.is_running = False
         self.update_interval = 30  # seconds
-        
+
     async def start(self):
         """Start the real-time data collection and broadcasting service"""
         self.is_running = True
         logger.info("Real-time service started")
-        
+
         # Start background tasks
         await asyncio.gather(
             self.price_update_loop(),
@@ -30,12 +32,12 @@ class RealtimeService:
             self.risk_assessment_loop(),
             self.broadcast_loop()
         )
-    
+
     async def stop(self):
         """Stop the real-time service"""
         self.is_running = False
         logger.info("Real-time service stopped")
-    
+
     @cached(prefix="price_data", ttl=60)
     @exponential_backoff(max_retries=3)
     @with_circuit_breaker("coingecko")
@@ -43,11 +45,11 @@ class RealtimeService:
         """Fetch latest prices from CoinGecko API"""
         tokens = ["ethereum", "bitcoin", "uniswap", "aave", "compound"]
         prices = {}
-        
+
         for token in tokens:
             try:
                 response = requests.get(
-                    f"https://api.coingecko.com/api/v3/simple/price",
+                    "https://api.coingecko.com/api/v3/simple/price",
                     params={
                         "ids": token,
                         "vs_currencies": "usd",
@@ -58,7 +60,7 @@ class RealtimeService:
                 )
                 response.raise_for_status()
                 data = response.json()
-                
+
                 if token in data:
                     prices[token] = {
                         "price": data[token]["usd"],
@@ -66,7 +68,7 @@ class RealtimeService:
                         "market_cap": data[token].get("usd_market_cap", 0),
                         "timestamp": datetime.now().isoformat()
                     }
-                    
+
                     # Store in database
                     price_data = PriceData(
                         token=token,
@@ -76,17 +78,17 @@ class RealtimeService:
                         timestamp=datetime.now()
                     )
                     await db_service.insert_price_data(price_data)
-                    
+
             except Exception as e:
                 logger.error(f"Error fetching price for {token}: {e}")
                 continue
-        
+
         return prices
-    
+
     async def generate_sentiment_data(self) -> Dict[str, Any]:
         """Generate mock sentiment data (replace with real Twitter/Reddit analysis)"""
         import random
-        
+
         sentiment_data = {
             "overall_sentiment": random.uniform(-1, 1),
             "sentiment_sources": [
@@ -103,7 +105,7 @@ class RealtimeService:
             ],
             "timestamp": datetime.now().isoformat()
         }
-        
+
         # Store in database
         sentiment_obj = SentimentData(
             source="aggregated",
@@ -113,20 +115,20 @@ class RealtimeService:
             metadata={"sources": sentiment_data["sentiment_sources"]}
         )
         await db_service.insert_sentiment_data(sentiment_obj)
-        
+
         return sentiment_data
-    
+
     async def assess_risk_levels(self) -> Dict[str, Any]:
         """Assess current risk levels across protocols"""
         import random
-        
+
         protocols = ["ethereum", "uniswap", "aave", "compound"]
         risk_data = {}
-        
+
         for protocol in protocols:
             risk_score = random.uniform(0, 100)
             risk_level = "low" if risk_score < 30 else "medium" if risk_score < 70 else "high"
-            
+
             risk_data[protocol] = {
                 "risk_score": risk_score,
                 "risk_level": risk_level,
@@ -137,7 +139,7 @@ class RealtimeService:
                 ],
                 "timestamp": datetime.now().isoformat()
             }
-            
+
             # Store high-risk events in database
             if risk_score > 70:
                 risk_event = RiskEvent(
@@ -149,9 +151,9 @@ class RealtimeService:
                     metadata={"factors": risk_data[protocol]["factors"]}
                 )
                 await db_service.insert_risk_event(risk_event)
-        
+
         return risk_data
-    
+
     async def price_update_loop(self):
         """Background loop for price updates"""
         while self.is_running:
@@ -164,9 +166,9 @@ class RealtimeService:
                 logger.info("Price data broadcasted")
             except Exception as e:
                 logger.error(f"Error in price update loop: {e}")
-            
+
             await asyncio.sleep(self.update_interval)
-    
+
     async def sentiment_update_loop(self):
         """Background loop for sentiment updates"""
         while self.is_running:
@@ -179,9 +181,9 @@ class RealtimeService:
                 logger.info("Sentiment data broadcasted")
             except Exception as e:
                 logger.error(f"Error in sentiment update loop: {e}")
-            
+
             await asyncio.sleep(self.update_interval * 2)  # Update every 60 seconds
-    
+
     async def risk_assessment_loop(self):
         """Background loop for risk assessment"""
         while self.is_running:
@@ -194,16 +196,16 @@ class RealtimeService:
                 logger.info("Risk assessment data broadcasted")
             except Exception as e:
                 logger.error(f"Error in risk assessment loop: {e}")
-            
+
             await asyncio.sleep(self.update_interval * 3)  # Update every 90 seconds
-    
+
     async def broadcast_loop(self):
         """Background loop for periodic status broadcasts"""
         while self.is_running:
             try:
                 # Get aggregated stats from database
                 stats = await db_service.get_protocol_stats()
-                
+
                 await broadcast_to_clients(json.dumps({
                     "type": "system_status",
                     "data": {
@@ -215,7 +217,7 @@ class RealtimeService:
                 logger.info("System status broadcasted")
             except Exception as e:
                 logger.error(f"Error in broadcast loop: {e}")
-            
+
             await asyncio.sleep(self.update_interval * 4)  # Update every 2 minutes
 
 # Global real-time service instance

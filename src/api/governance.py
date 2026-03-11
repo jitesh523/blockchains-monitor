@@ -1,9 +1,10 @@
-import logging
 import asyncio
-from typing import List, Dict, Any, Optional
-from datetime import datetime
-import httpx
+import logging
 import os
+from datetime import datetime
+from typing import Any, Dict, List
+
+import httpx
 
 logger = logging.getLogger(__name__)
 

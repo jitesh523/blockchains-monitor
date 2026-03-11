@@ -3,10 +3,11 @@ liquidity_model.py
 Fetch historical TVL data for a DeFi protocol from DeFi Llama, forecast TVL using Prophet.
 Requirements: requests, pandas, prophet (install prophet via pip, it's fbprophet or prophet depending on version)
 """
-import requests
+
 import pandas as pd
+import requests
 from prophet import Prophet
-import datetime
+
 
 def fetch_tvl(protocol: str = "curve"):
     url = f"https://api.llama.fi/protocol/{protocol}"

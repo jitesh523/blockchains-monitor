@@ -4,29 +4,30 @@ Test script for the volatility model.
 """
 
 import asyncio
-import sys
 import os
+import sys
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.models.volatility_model import get_protocol_volatility, get_prices, forecast_volatility
+from src.models.volatility_model import get_protocol_volatility
+
 
 async def test_volatility_model():
     """Test the volatility model with some sample protocols."""
     print("Testing Volatility Model...")
     print("=" * 50)
-    
+
     # Test protocols
     protocols = ['ethereum', 'uniswap', 'aave']
-    
+
     for protocol in protocols:
         print(f"\nTesting {protocol}...")
-        
+
         try:
             # Get volatility data
             vol_data = await get_protocol_volatility(protocol, days=90, horizon=3)
-            
+
             if 'error' in vol_data:
                 print(f"❌ Error for {protocol}: {vol_data['error']}")
             else:
@@ -36,7 +37,7 @@ async def test_volatility_model():
                 print(f"   Data Points: {vol_data['data_points']}")
                 print(f"   Latest Price: ${vol_data['latest_price']:.4f}")
                 print(f"   24h Change: {vol_data['price_change_24h']:.2f}%")
-                
+
         except Exception as e:
             print(f"❌ Exception for {protocol}: {e}")
 

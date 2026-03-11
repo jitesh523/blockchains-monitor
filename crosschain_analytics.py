@@ -8,11 +8,11 @@ returns a compact correlation summary with a confidence score.
 """
 from __future__ import annotations
 
+import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Dict, Iterable, List, Optional, Tuple
-from collections import defaultdict
-import logging
 
 logger = logging.getLogger(__name__)
 

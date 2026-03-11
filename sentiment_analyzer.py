@@ -4,7 +4,7 @@ Fetches real tweets using Twitter API and analyzes sentiment with HuggingFace Di
 Note: Requires transformers, torch, requests. Add to requirements.txt if needed.
 """
 import os
-import requests
+
 from transformers import pipeline
 
 TWITTER_BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")

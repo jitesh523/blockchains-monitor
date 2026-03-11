@@ -2,7 +2,8 @@
 user_risk_config.py
 API for user-driven risk scoring and custom KPIs.
 """
-from typing import Dict, Any
+from typing import Dict
+
 
 def user_risk_profile_config(factor_weights: Dict[str, float]) -> None:
     """

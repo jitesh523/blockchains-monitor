@@ -1,13 +1,14 @@
-import streamlit as st
-from typing import Dict, Any
-import sys
 import os
+import sys
+from typing import Any, Dict
+
+import streamlit as st
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 try:
-    from src.utils.contrast_check import check_contrast, calculate_contrast_ratio
+    from src.utils.contrast_check import calculate_contrast_ratio, check_contrast
 except ImportError:
     # Fallback for missing contrast check
     def check_contrast(hex1: str, hex2: str, min_ratio: float = 4.5) -> bool:
@@ -62,42 +63,42 @@ def get_theme_audit_results(dark_mode: bool = True) -> Dict[str, Any]:
         'failed': [],
         'warnings': []
     }
-    
+
     # Check text-on-background contrast
     text_bg_ratio = calculate_contrast_ratio(theme['text_primary'], theme['background'])
     if text_bg_ratio >= 4.5:
         audit_results['passed'].append(f"Primary text on background: {text_bg_ratio:.2f}:1")
     else:
         audit_results['failed'].append(f"Primary text on background: {text_bg_ratio:.2f}:1 (needs 4.5:1)")
-    
+
     # Check secondary text contrast
     sec_text_bg_ratio = calculate_contrast_ratio(theme['text_secondary'], theme['background'])
     if sec_text_bg_ratio >= 4.5:
         audit_results['passed'].append(f"Secondary text on background: {sec_text_bg_ratio:.2f}:1")
     else:
         audit_results['failed'].append(f"Secondary text on background: {sec_text_bg_ratio:.2f}:1 (needs 4.5:1)")
-    
+
     # Check card contrast
     card_text_ratio = calculate_contrast_ratio(theme['text_primary'], theme['card'])
     if card_text_ratio >= 4.5:
         audit_results['passed'].append(f"Text on card: {card_text_ratio:.2f}:1")
     else:
         audit_results['failed'].append(f"Text on card: {card_text_ratio:.2f}:1 (needs 4.5:1)")
-    
+
     # Check warning colors
     warning_ratio = calculate_contrast_ratio(theme['warning'], theme['background'])
     if warning_ratio >= 3.0:  # Lower threshold for non-text elements
         audit_results['passed'].append(f"Warning color: {warning_ratio:.2f}:1")
     else:
         audit_results['warnings'].append(f"Warning color: {warning_ratio:.2f}:1 (consider improving)")
-    
+
     return audit_results
 
 def inject_custom_css(dark_mode: bool = True):
     """Inject custom CSS for modern UI styling with proper theme switching."""
     theme = get_theme_colors(dark_mode)
     mode_class = 'dark-mode' if dark_mode else 'light-mode'
-    
+
     # Pre-calculate conditional values
     proposal_card_shadow = 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);' if not dark_mode else 'box-shadow: 0 2px 8px rgba(0, 212, 255, 0.08), 0 1px 3px rgba(0, 212, 255, 0.04);'
     proposal_card_hover_shadow = 'box-shadow: 0 20px 40px rgba(0, 102, 204, 0.12), 0 8px 16px rgba(0, 102, 204, 0.08), 0 0 0 1px rgba(0, 102, 204, 0.1);' if not dark_mode else 'box-shadow: 0 20px 40px rgba(0, 212, 255, 0.15), 0 8px 16px rgba(0, 212, 255, 0.1), 0 0 0 1px rgba(0, 212, 255, 0.2);'
@@ -111,7 +112,7 @@ def inject_custom_css(dark_mode: bool = True):
     expander_shadow = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);' if not dark_mode else 'box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);'
     expander_hover_shadow = 'box-shadow: 0 4px 15px rgba(0, 102, 204, 0.12), 0 2px 6px rgba(0, 102, 204, 0.08);' if not dark_mode else 'box-shadow: 0 4px 15px rgba(0, 212, 255, 0.15), 0 2px 6px rgba(0, 212, 255, 0.1);'
     risk_indicator_shadow = 'box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);' if not dark_mode else 'box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);'
-    
+
     css = f"""
     <style>
     /* Import Google Fonts */
@@ -704,16 +705,16 @@ def inject_custom_css(dark_mode: bool = True):
     }}
     </style>
     """
-    
+
     st.markdown(css, unsafe_allow_html=True)
 
 def create_animated_title(title: str, subtitle: str = None):
     """Create an animated title with gradient effect."""
     import html as html_module
-    
+
     # Escape HTML content to prevent raw HTML from being rendered
     escaped_title = html_module.escape(title)
-    
+
     html = f"""
     <div class="main-title">{escaped_title}</div>
     """
@@ -724,7 +725,7 @@ def create_animated_title(title: str, subtitle: str = None):
             {escaped_subtitle}
         </div>
         """
-    
+
     st.markdown(html, unsafe_allow_html=True)
 
 def create_proposal_card(proposal: Dict[str, Any], metrics: Dict[str, Any]):
@@ -736,7 +737,7 @@ def create_proposal_card(proposal: Dict[str, Any], metrics: Dict[str, Any]):
     vol_raw = metrics.get('volatility', 'N/A')
     sentiment_raw = metrics.get('sentiment', 'N/A')
     risk_score_raw = metrics.get('risk_score', 'N/A')
-    
+
     # Handle NaN or None or inf for numbers
     def nice(val):
         try:
@@ -825,13 +826,13 @@ def create_risk_indicator(risk_score: float):
     else:
         risk_class = "risk-high"
         risk_text = "🔴 High Risk"
-    
+
     html = f"""
     <div class="risk-indicator {risk_class}">
         {risk_text} ({risk_score:.1f}/100)
     </div>
     """
-    
+
     st.markdown(html, unsafe_allow_html=True)
 
 def create_loading_spinner():
@@ -842,7 +843,7 @@ def create_loading_spinner():
         <span style="margin-left: 1rem; color: var(--text-secondary);">Loading...</span>
     </div>
     """
-    
+
     st.markdown(html, unsafe_allow_html=True)
 
 def create_theme_toggle():
@@ -850,59 +851,59 @@ def create_theme_toggle():
     # Initialize theme state
     if 'dark_mode' not in st.session_state:
         st.session_state.dark_mode = True
-    
+
     # Create toggle button in sidebar
     with st.sidebar:
         st.markdown("---")
         col1, col2 = st.columns([3, 1])
-        
+
         with col1:
             st.write("**Theme**")
-        
+
         with col2:
             # Use a button to toggle theme
             current_icon = "🌙" if st.session_state.dark_mode else "☀️"
             if st.button(current_icon, key="theme_toggle", help="Toggle theme"):
                 st.session_state.dark_mode = not st.session_state.dark_mode
                 st.rerun()
-    
+
     return st.session_state.dark_mode
 
 def display_theme_audit():
     """Display theme audit results in the Streamlit app."""
     st.subheader("🎨 Theme Accessibility Audit")
-    
+
     # Get current theme
     current_dark_mode = st.session_state.get('dark_mode', True)
-    
+
     # Display audit for current theme
     audit_results = get_theme_audit_results(current_dark_mode)
-    
+
     mode_name = "Dark" if current_dark_mode else "Light"
     st.write(f"**Current Theme: {mode_name} Mode**")
-    
+
     # Display passed items
     if audit_results['passed']:
         st.success("✅ **Passed Checks:**")
         for item in audit_results['passed']:
             st.write(f"  • {item}")
-    
+
     # Display failed items
     if audit_results['failed']:
         st.error("❌ **Failed Checks:**")
         for item in audit_results['failed']:
             st.write(f"  • {item}")
-    
+
     # Display warnings
     if audit_results['warnings']:
         st.warning("⚠️ **Warnings:**")
         for item in audit_results['warnings']:
             st.write(f"  • {item}")
-    
+
     # Summary
     total_checks = len(audit_results['passed']) + len(audit_results['failed']) + len(audit_results['warnings'])
     passed_checks = len(audit_results['passed'])
-    
+
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("Total Checks", total_checks)
@@ -910,18 +911,18 @@ def display_theme_audit():
         st.metric("Passed", passed_checks, delta=passed_checks - total_checks + passed_checks)
     with col3:
         st.metric("Failed", len(audit_results['failed']), delta=-len(audit_results['failed']) if audit_results['failed'] else 0)
-    
+
     # Show both theme audits in expander
     with st.expander("📊 Compare Both Themes"):
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.write("**🌙 Dark Mode**")
             dark_audit = get_theme_audit_results(True)
             st.write(f"Passed: {len(dark_audit['passed'])}")
             st.write(f"Failed: {len(dark_audit['failed'])}")
             st.write(f"Warnings: {len(dark_audit['warnings'])}")
-        
+
         with col2:
             st.write("**☀️ Light Mode**")
             light_audit = get_theme_audit_results(False)
@@ -932,7 +933,7 @@ def display_theme_audit():
 def apply_theme(dark_mode: bool = True):
     """Apply the theme to the entire application."""
     inject_custom_css(dark_mode)
-    
+
     # Store theme preference in session state
     if 'dark_mode' not in st.session_state:
         st.session_state.dark_mode = dark_mode
