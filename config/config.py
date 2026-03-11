@@ -1,4 +1,5 @@
 import os
+import logging
 from dotenv import load_dotenv
 from typing import Dict, List
 
@@ -36,6 +37,7 @@ class Config:
     UPDATE_INTERVAL = int(os.getenv('UPDATE_INTERVAL', '30'))
     CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', '300'))
     MAX_WORKERS = int(os.getenv('MAX_WORKERS', '4'))
+    DEMO_MODE = os.getenv('DEMO_MODE', 'False').lower() == 'true'
     
     # Telegram Bot
     TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -132,15 +134,26 @@ class Config:
     @classmethod
     def validate_config(cls) -> bool:
         """Validate that required configuration is present."""
+        logger = logging.getLogger(__name__)
         required_keys = [
             'ETHERSCAN_API_KEY',
             'INFURA_PROJECT_ID'
         ]
-        
+
         missing_keys = [key for key in required_keys if not getattr(cls, key)]
-        
+
         if missing_keys:
-            print(f"Missing required configuration: {', '.join(missing_keys)}")
-            return False
-        
+            if cls.DEMO_MODE:
+                logger.warning(
+                    "Running in DEMO_MODE with missing keys: %s. External integrations will be mocked or limited.",
+                    ", ".join(missing_keys)
+                )
+                return True
+            else:
+                logger.error(
+                    "Missing required configuration: %s. Set DEMO_MODE=true to run without external integrations.",
+                    ", ".join(missing_keys)
+                )
+                return False
+
         return True

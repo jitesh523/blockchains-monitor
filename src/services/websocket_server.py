@@ -11,12 +11,15 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
-# CORS settings
-origins = [
-    "http://localhost",
-    "http://localhost:8501",
-    # Add more allowed origins as needed
-]
+# CORS settings (allow override via env: WEBSOCKET_CORS_ORIGINS="http://localhost,http://localhost:8501")
+env_origins = os.getenv("WEBSOCKET_CORS_ORIGINS")
+if env_origins:
+    origins = [o.strip() for o in env_origins.split(",") if o.strip()]
+else:
+    origins = [
+        "http://localhost",
+        "http://localhost:8501",
+    ]
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,8 +43,16 @@ class ConnectionManager:
         logger.info("WebSocket disconnected")
 
     async def send_message(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
+        # Iterate on a copy to allow safe removal
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_text(message)
+            except Exception as e:
+                logger.warning(f"WebSocket send failed, removing connection: {e}")
+                try:
+                    self.disconnect(connection)
+                except Exception:
+                    pass
 
 # Global manager instance
 manager = ConnectionManager()
