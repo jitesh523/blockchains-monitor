@@ -1,5 +1,43 @@
 # CHANGELOG.md
 
+## v0.4.0
+
+### Features
+- Functional `explainability.py` — ranked feature-importance explanations with narratives
+- Rich `mock_mode.py` — seed-controlled generators for events, risk assessments, volatility
+
+### API & Documentation
+- Expanded `openapi.yaml` — 5 endpoints with full request/response schemas
+- Structured logging in `alerts.py` (replaced all `print()` with `logging`)
+
+### Testing
+- 14-test suite for scenario simulator (upgrade types, market conditions, weights, edge cases)
+
+## v0.3.0
+
+### Validation & Quality
+- Upgraded `validation.py` with Pydantic `BlockchainEvent` and `AlertRequest` models
+- Field constraints, chain/event-type validators, strict validation mode
+- Added `pydantic>=2.0.0` dependency
+
+### Testing
+- 30-test unit test suite for `RiskAssessment` scoring logic
+- Tests cover volatility/sentiment normalization, risk categorization, recommendations, protocol comparison
+
+### Features
+- Functional `scenario_simulator.py` with composite risk scoring
+  - 4 weighted factors: volatility, sentiment, governance, technical
+  - Lookup tables for upgrade types, market conditions, chain complexity
+  - Structured output with risk breakdown and recommendations
+
+### Infrastructure
+- Removed deprecated `version` key from `docker-compose.yaml`
+- Added healthchecks to postgres (`pg_isready`) and redis (`redis-cli ping`)
+- Condition-based `depends_on` for proper service startup ordering
+
+### Documentation
+- Added `CONTRIBUTING.md` with dev setup, testing, linting, PR guidelines
+
 ## v0.2.0
 
 ### Improvements

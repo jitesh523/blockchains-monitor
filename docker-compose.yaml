@@ -1,11 +1,10 @@
 # docker-compose.yaml
 # Production-ready microservices with PostgreSQL, Redis, and monitoring
-version: '3.8'
 services:
   # Main Streamlit application
   streamlit_app:
     build: .
-    command: ["streamlit", "run", "production_app.py"]
+    command: [ "streamlit", "run", "production_app.py" ]
     environment:
       - ENV=production
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/blockchain_monitor
@@ -13,8 +12,10 @@ services:
       - WEBSOCKET_PORT=8000
       - HEALTH_PORT=8001
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8501:8501"
     restart: unless-stopped
@@ -22,7 +23,7 @@ services:
   # WebSocket server for real-time updates
   websocket_server:
     build: .
-    command: ["python3", "src/services/websocket_server.py"]
+    command: [ "python3", "src/services/websocket_server.py" ]
     environment:
       - WEBSOCKET_PORT=8000
     ports:
@@ -32,14 +33,16 @@ services:
   # Health check API
   health_api:
     build: .
-    command: ["python3", "production_app.py"]
+    command: [ "python3", "production_app.py" ]
     environment:
       - HEALTH_PORT=8001
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/blockchain_monitor
       - REDIS_URL=redis://redis:6379/0
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8001:8001"
     restart: unless-stopped
@@ -55,6 +58,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   # Redis cache
@@ -64,6 +73,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     restart: unless-stopped
 
   # Optional: Prometheus monitoring
@@ -98,9 +113,8 @@ volumes:
   redis_data:
   grafana_data:
 
-# For cloud deployments, use managed services:
-# - AWS RDS for PostgreSQL
-# - AWS ElastiCache for Redis
-# - AWS ECS/EKS for container orchestration
-# - CloudWatch for monitoring
-
+    # For cloud deployments, use managed services:
+    # - AWS RDS for PostgreSQL
+    # - AWS ElastiCache for Redis
+    # - AWS ECS/EKS for container orchestration
+    # - CloudWatch for monitoring
