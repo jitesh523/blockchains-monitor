@@ -1,96 +1,141 @@
 """
 pipeline.py
-Complete monitoring pipeline: runs sentiment, volatility, liquidity, and triggers alerts if thresholds are breached.
-Requires: requests, pandas, arch, prophet, transformers, torch, smtplib, python-dotenv (for .env, optional)
+Complete monitoring pipeline: runs sentiment, volatility, liquidity,
+and triggers alerts if thresholds are breached.
+
+Refactored for testability and configuration-driven thresholding.
 """
+from __future__ import annotations
+
 import datetime
 import logging
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
 
 from alerts import alert_user
 from liquidity_model import fetch_tvl, forecast_tvl
 from sentiment_analyzer import analyze_tweet_sentiment, get_tweets
 from volatility_model import compute_garch_volatility, fetch_eth_prices
 
-# Optionally load .env
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.FileHandler("pipeline.log"), logging.StreamHandler()])
-
-# Thresholds (customize for your protocol/system)
-SENTIMENT_NEGATIVE_THRESHOLD = 0.7  # if > 70% tweets are negative
-VOLATILITY_THRESHOLD = 0.6          # if annualized vol > 60%
-LIQUIDITY_DROP_PCT = 0.05           # if forecast TVL drops >5% next week
+# Provide isolated module logger
+logger = logging.getLogger(__name__)
 
 
-def check_sentiment():
-    tweets = get_tweets("ethereum upgrade", max_results=5)
-    sentiments = analyze_tweet_sentiment(tweets)
-    negatives = sum(1 for s in sentiments if s['label'] == 'NEGATIVE')
-    negative_ratio = negatives / len(sentiments)
-    logging.info(f"Sentiment analysis: {negative_ratio*100:.1f}% negative")
-    return negative_ratio, tweets, sentiments
+@dataclass
+class PipelineConfig:
+    """Configuration for the monitoring pipeline."""
+    sentiment_negative_threshold: float = 0.70
+    volatility_threshold_pct: float = 60.0
+    liquidity_drop_pct: float = 0.05
+    protocol_slug: str = "curve-dex"
+    search_term: str = "ethereum upgrade"
 
 
-def check_volatility():
-    prices = fetch_eth_prices(days=180)
-    vol = compute_garch_volatility(prices)
-    logging.info(f"Volatility forecast: {vol:.2f}% annualized")
-    return vol
+def check_sentiment(config: PipelineConfig) -> Tuple[float, List[Any], List[Dict[str, Any]]]:
+    """Fetch tweets and calculate the negative sentiment ratio."""
+    try:
+        tweets = get_tweets(config.search_term, max_results=5)
+        sentiments = analyze_tweet_sentiment(tweets)
+        if not sentiments:
+            return 0.0, [], []
+
+        negatives = sum(1 for s in sentiments if s.get("label") == "NEGATIVE")
+        negative_ratio = negatives / len(sentiments)
+        logger.info("Sentiment analysis: %.1f%% negative", negative_ratio * 100)
+        return negative_ratio, tweets, sentiments
+    except Exception as e:
+        logger.error("Failed to check sentiment: %s", e)
+        return 0.0, [], []
 
 
-def check_liquidity(protocol_slug='curve-dex'):
-    df = fetch_tvl(protocol_slug)
-    forecast = forecast_tvl(df, days=7)
-    last = df['y'].iloc[-1]
-    predicted = forecast['yhat'].iloc[-1]
-    drop = (last - predicted) / last if last > 0 else 0
-    logging.info(f"Liquidity forecast: Current TVL={last:,.0f}, 7d forecast={predicted:,.0f}, drop={drop*100:.2f}%")
-    return drop, last, predicted
+def check_volatility(config: PipelineConfig) -> float:
+    """Fetch prices and calculate annualized GARCH volatility."""
+    try:
+        prices = fetch_eth_prices(days=180)
+        vol = compute_garch_volatility(prices)
+        logger.info("Volatility forecast: %.2f%% annualized", vol)
+        return float(vol)
+    except Exception as e:
+        logger.error("Failed to check volatility: %s", e)
+        return 0.0
+
+
+def check_liquidity(config: PipelineConfig) -> Tuple[float, float, float]:
+    """Fetch TVL and forecast the percentage drop over 7 days."""
+    try:
+        df = fetch_tvl(config.protocol_slug)
+        forecast = forecast_tvl(df, days=7)
+        last_tvl = float(df["y"].iloc[-1])
+        predicted_tvl = float(forecast["yhat"].iloc[-1])
+
+        drop = (last_tvl - predicted_tvl) / last_tvl if last_tvl > 0 else 0.0
+        logger.info(
+            "Liquidity forecast: Current TVL=%.0f, 7d forecast=%.0f, drop=%.2f%%",
+            last_tvl, predicted_tvl, drop * 100
+        )
+        return drop, last_tvl, predicted_tvl
+    except Exception as e:
+        logger.error("Failed to check liquidity: %s", e)
+        return 0.0, 0.0, 0.0
+
+
+def run_monitoring_cycle(config: PipelineConfig) -> List[str]:
+    """
+    Run one complete cycle of the monitoring pipeline.
+    Returns a list of alert messages triggered during the cycle.
+    """
+    logger.info("Starting monitoring cycle for %s", config.protocol_slug)
+    alert_msgs: List[str] = []
+
+    negative_ratio, _, _ = check_sentiment(config)
+    if negative_ratio > config.sentiment_negative_threshold:
+        msg = f"ALERT: Sentiment risk. Negative sentiment at {negative_ratio*100:.1f}%."
+        logger.warning(msg)
+        alert_msgs.append(msg)
+
+    vol = check_volatility(config)
+    if vol > config.volatility_threshold_pct:
+        msg = f"ALERT: Volatility risk. Annualized volatility is {vol:.2f}%."
+        logger.warning(msg)
+        alert_msgs.append(msg)
+
+    drop, _, _ = check_liquidity(config)
+    if drop > config.liquidity_drop_pct:
+        msg = f"ALERT: Liquidity risk. TVL forecast drop of {drop*100:.2f}%."
+        logger.warning(msg)
+        alert_msgs.append(msg)
+
+    return alert_msgs
 
 
 def main():
-    negative_ratio, tweets, sentiments = check_sentiment()
-    vol = check_volatility()
-    drop, last_tvl, pred_tvl = check_liquidity()
-    alert_msgs = []
+    """Main execution point for cron/scheduler."""
+    # Optional .env loading
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ImportError:
+        pass
 
-    if negative_ratio > SENTIMENT_NEGATIVE_THRESHOLD:
-        msg = f"ALERT: Sentiment risk. Negative sentiment at {negative_ratio*100:.1f}%."
-        logging.warning(msg)
-        alert_msgs.append(msg)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        handlers=[logging.FileHandler("pipeline.log"), logging.StreamHandler()]
+    )
 
-    if vol > VOLATILITY_THRESHOLD * 100:
-        msg = f"ALERT: Volatility risk. Annualized volatility is {vol:.2f}%."
-        logging.warning(msg)
-        alert_msgs.append(msg)
+    config = PipelineConfig()
+    alerts = run_monitoring_cycle(config)
 
-    if drop > LIQUIDITY_DROP_PCT:
-        msg = f"ALERT: Liquidity risk. TVL forecast drop of {drop*100:.2f}%."
-        logging.warning(msg)
-        alert_msgs.append(msg)
-
-    if alert_msgs:
-        for msg in alert_msgs:
-            alert_user(
-                title="Blockchain Risk Alert!",
-                message=msg,
-                channel="slack",
-                metadata={"timestamp": datetime.datetime.utcnow().isoformat()}
-            )
-            alert_user(
-                title="Blockchain Risk Alert!",
-                message=msg,
-                channel="email",
-                metadata={"timestamp": datetime.datetime.utcnow().isoformat()}
-            )
-        logging.info("Alerts triggered.")
+    if alerts:
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        metadata = {"timestamp": timestamp}
+        for msg in alerts:
+            alert_user(title="Blockchain Risk Alert!", message=msg, channel="slack", metadata=metadata)
+            alert_user(title="Blockchain Risk Alert!", message=msg, channel="email", metadata=metadata)
+        logger.info("Alerts dispatched successfully.")
     else:
-        logging.info("No thresholds breached; no alerts.")
+        logger.info("No thresholds breached; no alerts dispatched.")
+
 
 if __name__ == "__main__":
     main()
-
