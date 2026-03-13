@@ -22,6 +22,7 @@ except Exception as e:
     logger.error(f"Failed to load sentiment model: {e}")
     sentiment_pipeline = None
 
+
 def analyze_sentiment(texts: List[str]) -> float:
     """Returns an average sentiment score between -1 and +1"""
     if not sentiment_pipeline or not texts:
@@ -31,27 +32,28 @@ def analyze_sentiment(texts: List[str]) -> float:
         results = sentiment_pipeline(texts)
         scores = []
         for res in results:
-            label = res['label']
-            score = res['score']
-            if label == 'POSITIVE':
-                scores.append(score)           # +ve
+            label = res["label"]
+            score = res["score"]
+            if label == "POSITIVE":
+                scores.append(score)  # +ve
             else:
-                scores.append(-1 * score)      # -ve
+                scores.append(-1 * score)  # -ve
         return round(float(np.mean(scores)), 3)
     except Exception as e:
         logger.error(f"Sentiment analysis failed: {e}")
         return 0.0
 
+
 def analyze_sentiment_detailed(texts: List[str]) -> Dict:
     """Returns detailed sentiment analysis with individual scores"""
     if not sentiment_pipeline or not texts:
         return {
-            'average_sentiment': 0.0,
-            'positive_count': 0,
-            'negative_count': 0,
-            'neutral_count': 0,
-            'total_texts': 0,
-            'individual_scores': []
+            "average_sentiment": 0.0,
+            "positive_count": 0,
+            "negative_count": 0,
+            "neutral_count": 0,
+            "total_texts": 0,
+            "individual_scores": [],
         }
 
     try:
@@ -62,10 +64,10 @@ def analyze_sentiment_detailed(texts: List[str]) -> Dict:
         individual_scores = []
 
         for i, res in enumerate(results):
-            label = res['label']
-            score = res['score']
+            label = res["label"]
+            score = res["score"]
 
-            if label == 'POSITIVE':
+            if label == "POSITIVE":
                 normalized_score = score
                 positive_count += 1
             else:
@@ -73,32 +75,35 @@ def analyze_sentiment_detailed(texts: List[str]) -> Dict:
                 negative_count += 1
 
             scores.append(normalized_score)
-            individual_scores.append({
-                'text': texts[i][:100] + '...' if len(texts[i]) > 100 else texts[i],
-                'label': label,
-                'score': score,
-                'normalized_score': normalized_score
-            })
+            individual_scores.append(
+                {
+                    "text": texts[i][:100] + "..." if len(texts[i]) > 100 else texts[i],
+                    "label": label,
+                    "score": score,
+                    "normalized_score": normalized_score,
+                }
+            )
 
         return {
-            'average_sentiment': round(float(np.mean(scores)), 3),
-            'positive_count': positive_count,
-            'negative_count': negative_count,
-            'neutral_count': 0,  # DistilBERT doesn't have neutral class
-            'total_texts': len(texts),
-            'individual_scores': individual_scores
+            "average_sentiment": round(float(np.mean(scores)), 3),
+            "positive_count": positive_count,
+            "negative_count": negative_count,
+            "neutral_count": 0,  # DistilBERT doesn't have neutral class
+            "total_texts": len(texts),
+            "individual_scores": individual_scores,
         }
 
     except Exception as e:
         logger.error(f"Detailed sentiment analysis failed: {e}")
         return {
-            'average_sentiment': 0.0,
-            'positive_count': 0,
-            'negative_count': 0,
-            'neutral_count': 0,
-            'total_texts': 0,
-            'individual_scores': []
+            "average_sentiment": 0.0,
+            "positive_count": 0,
+            "negative_count": 0,
+            "neutral_count": 0,
+            "total_texts": 0,
+            "individual_scores": [],
         }
+
 
 def get_mock_tweets(protocol_name: str, upgrade_type: str = "general") -> List[str]:
     """Generate mock tweets for testing sentiment analysis"""
@@ -110,29 +115,29 @@ def get_mock_tweets(protocol_name: str, upgrade_type: str = "general") -> List[s
         "This proposal looks promising and could push prices up.",
         "Not sure if this upgrade is safe. Could lead to vulnerabilities.",
         "Amazing vote turnout! Community is really backing it.",
-        "Disaster incoming. Everyone's dumping their tokens!"
+        "Disaster incoming. Everyone's dumping their tokens!",
     ]
 
     # Add protocol-specific tweets
     protocol_tweets = {
-        'uniswap': [
+        "uniswap": [
             f"New {protocol_name} upgrade will improve liquidity!",
             f"Concerned about {protocol_name} governance centralization",
             f"{protocol_name} fees are getting too high with this change",
-            f"Bullish on {protocol_name} after this upgrade announcement"
+            f"Bullish on {protocol_name} after this upgrade announcement",
         ],
-        'aave': [
+        "aave": [
             "AAVE lending rates will be much better after upgrade",
             f"This {protocol_name} proposal could hurt borrowers",
             f"Great to see {protocol_name} innovating in DeFi space",
-            f"Worried about {protocol_name} liquidation risks"
+            f"Worried about {protocol_name} liquidation risks",
         ],
-        'compound': [
+        "compound": [
             "Compound governance is getting stronger",
             f"Not sure about {protocol_name} new interest rate model",
             "COMP holders should vote YES on this",
-            f"This {protocol_name} upgrade might cause market volatility"
-        ]
+            f"This {protocol_name} upgrade might cause market volatility",
+        ],
     }
 
     # Combine base tweets with protocol-specific ones
@@ -142,19 +147,24 @@ def get_mock_tweets(protocol_name: str, upgrade_type: str = "general") -> List[s
 
     # Add upgrade-type specific tweets
     if upgrade_type == "governance":
-        all_tweets.extend([
-            "Governance proposals are getting too complex",
-            "Love seeing community participation in voting",
-            "These governance changes will centralize power"
-        ])
+        all_tweets.extend(
+            [
+                "Governance proposals are getting too complex",
+                "Love seeing community participation in voting",
+                "These governance changes will centralize power",
+            ]
+        )
     elif upgrade_type == "technical":
-        all_tweets.extend([
-            "Technical upgrades always make me nervous",
-            "Smart contract audit looks solid",
-            "This code change could introduce bugs"
-        ])
+        all_tweets.extend(
+            [
+                "Technical upgrades always make me nervous",
+                "Smart contract audit looks solid",
+                "This code change could introduce bugs",
+            ]
+        )
 
     return all_tweets
+
 
 async def fetch_real_tweets(protocol_name: str, keyword: str = "upgrade") -> List[str]:
     """
@@ -168,6 +178,7 @@ async def fetch_real_tweets(protocol_name: str, keyword: str = "upgrade") -> Lis
     # For now, return mock data
     return get_mock_tweets(protocol_name, "general")
 
+
 def get_sentiment_for_protocol(protocol_name: str, upgrade_type: str = "general") -> Dict:
     """Get sentiment analysis for a specific protocol upgrade"""
 
@@ -179,11 +190,12 @@ def get_sentiment_for_protocol(protocol_name: str, upgrade_type: str = "general"
     sentiment_data = analyze_sentiment_detailed(tweets)
 
     # Add protocol context
-    sentiment_data['protocol'] = protocol_name
-    sentiment_data['upgrade_type'] = upgrade_type
-    sentiment_data['timestamp'] = datetime.now().isoformat()
+    sentiment_data["protocol"] = protocol_name
+    sentiment_data["upgrade_type"] = upgrade_type
+    sentiment_data["timestamp"] = datetime.now().isoformat()
 
     return sentiment_data
+
 
 def categorize_sentiment(score: float) -> str:
     """Categorize sentiment score into readable categories"""
@@ -198,6 +210,7 @@ def categorize_sentiment(score: float) -> str:
     else:
         return "Very Negative"
 
+
 def get_sentiment_color(score: float) -> str:
     """Get color code for sentiment visualization"""
     if score >= 0.3:
@@ -211,6 +224,7 @@ def get_sentiment_color(score: float) -> str:
     else:
         return "🔴"  # Red
 
+
 # Test function
 def test_sentiment_analysis():
     """Test the sentiment analysis with sample data"""
@@ -221,7 +235,7 @@ def test_sentiment_analysis():
         "This proposal looks promising and could push prices up.",
         "Not sure if this upgrade is safe. Could lead to vulnerabilities.",
         "Amazing vote turnout! Community is really backing it.",
-        "Disaster incoming. Everyone's dumping their tokens!"
+        "Disaster incoming. Everyone's dumping their tokens!",
     ]
 
     # Test basic sentiment
@@ -238,13 +252,14 @@ def test_sentiment_analysis():
     print(f"- Total: {detailed['total_texts']}")
 
     # Test protocol-specific sentiment
-    protocols = ['uniswap', 'aave', 'compound']
+    protocols = ["uniswap", "aave", "compound"]
     for protocol in protocols:
         print(f"\n{protocol.upper()} Sentiment:")
         sentiment_data = get_sentiment_for_protocol(protocol)
         print(f"- Score: {sentiment_data['average_sentiment']}")
         print(f"- Category: {categorize_sentiment(sentiment_data['average_sentiment'])}")
         print(f"- Tweets analyzed: {sentiment_data['total_texts']}")
+
 
 if __name__ == "__main__":
     test_sentiment_analysis()

@@ -30,6 +30,7 @@ def fetch_tvl(protocol: str = "curve"):
     df = df[["ds", "y"]]
     return df
 
+
 def forecast_tvl(df, days=7):
     m = Prophet()
     m.fit(df)
@@ -37,10 +38,10 @@ def forecast_tvl(df, days=7):
     forecast = m.predict(future)
     return forecast.tail(days)[["ds", "yhat", "yhat_lower", "yhat_upper"]]
 
+
 if __name__ == "__main__":
     # Use the correct slug for Curve
     df = fetch_tvl("curve-dex")
     result = forecast_tvl(df, days=7)
     print("7-day TVL forecast:")
     print(result)
-

@@ -3,6 +3,7 @@ sentiment_analyzer.py
 Fetches real tweets using Twitter API and analyzes sentiment with HuggingFace DistilBERT.
 Note: Requires transformers, torch, requests. Add to requirements.txt if needed.
 """
+
 import os
 
 from transformers import pipeline
@@ -13,6 +14,7 @@ assert TWITTER_BEARER_TOKEN, "Twitter Bearer Token not set in .env!"
 # Set up DistilBERT (or other HuggingFace) for sentiment analysis
 sentiment_pipe = pipeline("sentiment-analysis")
 
+
 def get_tweets(query, max_results=10):
     # Dummy tweets for local dev/testing
     return [
@@ -20,11 +22,13 @@ def get_tweets(query, max_results=10):
         "I'm worried about the upcoming Ethereum upgrade.",
         "Mixed feelings on the next ETH hard fork.",
         "ETH upgrades are always exciting.",
-        "Serious risks in this Ethereum protocol change!"
+        "Serious risks in this Ethereum protocol change!",
     ]
+
 
 def analyze_tweet_sentiment(tweets):
     return sentiment_pipe(tweets)
+
 
 if __name__ == "__main__":
     query = "ethereum"  # Simpler query for wider compatibility
@@ -36,4 +40,3 @@ if __name__ == "__main__":
         sentiment_results = analyze_tweet_sentiment(tweets)
         for t, r in zip(tweets, sentiment_results):
             print(f"{t}\n -> Sentiment: {r}")
-

@@ -1,6 +1,7 @@
 """
 Redis caching service for API responses with exponential backoff and circuit breaker.
 """
+
 import hashlib
 import json
 import logging
@@ -13,9 +14,10 @@ import redis
 
 logger = logging.getLogger(__name__)
 
+
 class CacheService:
     def __init__(self, redis_url: str = None):
-        self.redis_url = redis_url or os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+        self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
         try:
             self.redis_client = redis.from_url(self.redis_url)
             self.redis_client.ping()
@@ -66,11 +68,14 @@ class CacheService:
             logger.warning(f"Cache delete failed: {e}")
             return False
 
+
 # Global cache instance
 cache_service = CacheService()
 
+
 def cached(prefix: str, ttl: int = 300):
     """Decorator for caching function results"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -94,10 +99,13 @@ def cached(prefix: str, ttl: int = 300):
                 raise
 
         return wrapper
+
     return decorator
+
 
 def exponential_backoff(max_retries: int = 3, base_delay: float = 1.0):
     """Decorator for exponential backoff retry logic"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -108,14 +116,16 @@ def exponential_backoff(max_retries: int = 3, base_delay: float = 1.0):
                     if attempt == max_retries - 1:
                         raise
 
-                    delay = base_delay * (2 ** attempt)
+                    delay = base_delay * (2**attempt)
                     logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {e}. Retrying in {delay}s...")
                     time.sleep(delay)
 
             raise Exception(f"All {max_retries} attempts failed for {func.__name__}")
 
         return wrapper
+
     return decorator
+
 
 class CircuitBreaker:
     def __init__(self, failure_threshold: int = 5, recovery_timeout: int = 60):
@@ -152,15 +162,18 @@ class CircuitBreaker:
 
             raise e
 
+
 # Global circuit breakers for different services
 circuit_breakers = {
-    'coingecko': CircuitBreaker(failure_threshold=5, recovery_timeout=60),
-    'twitter': CircuitBreaker(failure_threshold=3, recovery_timeout=300),
-    'defillama': CircuitBreaker(failure_threshold=3, recovery_timeout=120),
+    "coingecko": CircuitBreaker(failure_threshold=5, recovery_timeout=60),
+    "twitter": CircuitBreaker(failure_threshold=3, recovery_timeout=300),
+    "defillama": CircuitBreaker(failure_threshold=3, recovery_timeout=120),
 }
+
 
 def with_circuit_breaker(service_name: str):
     """Decorator for circuit breaker pattern"""
+
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -171,4 +184,5 @@ def with_circuit_breaker(service_name: str):
             return breaker.call(func, *args, **kwargs)
 
         return wrapper
+
     return decorator

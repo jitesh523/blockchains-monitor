@@ -3,10 +3,12 @@ pipeline.py
 Complete monitoring pipeline: runs sentiment, volatility, liquidity, and triggers alerts if thresholds are breached.
 Requires: requests, pandas, arch, prophet, transformers, torch, smtplib, python-dotenv (for .env, optional)
 """
+
 import datetime
 import logging
 
 from alerts import alert_user
+
 from liquidity_model import fetch_tvl, forecast_tvl
 from sentiment_analyzer import analyze_tweet_sentiment, get_tweets
 from volatility_model import compute_garch_volatility, fetch_eth_prices
@@ -14,24 +16,29 @@ from volatility_model import compute_garch_volatility, fetch_eth_prices
 # Optionally load .env
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', handlers=[logging.FileHandler("pipeline.log"), logging.StreamHandler()])
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler("pipeline.log"), logging.StreamHandler()],
+)
 
 # Thresholds (customize for your protocol/system)
 SENTIMENT_NEGATIVE_THRESHOLD = 0.7  # if > 70% tweets are negative
-VOLATILITY_THRESHOLD = 0.6          # if annualized vol > 60%
-LIQUIDITY_DROP_PCT = 0.05           # if forecast TVL drops >5% next week
+VOLATILITY_THRESHOLD = 0.6  # if annualized vol > 60%
+LIQUIDITY_DROP_PCT = 0.05  # if forecast TVL drops >5% next week
 
 
 def check_sentiment():
     tweets = get_tweets("ethereum upgrade", max_results=5)
     sentiments = analyze_tweet_sentiment(tweets)
-    negatives = sum(1 for s in sentiments if s['label'] == 'NEGATIVE')
+    negatives = sum(1 for s in sentiments if s["label"] == "NEGATIVE")
     negative_ratio = negatives / len(sentiments)
-    logging.info(f"Sentiment analysis: {negative_ratio*100:.1f}% negative")
+    logging.info(f"Sentiment analysis: {negative_ratio * 100:.1f}% negative")
     return negative_ratio, tweets, sentiments
 
 
@@ -42,13 +49,13 @@ def check_volatility():
     return vol
 
 
-def check_liquidity(protocol_slug='curve-dex'):
+def check_liquidity(protocol_slug="curve-dex"):
     df = fetch_tvl(protocol_slug)
     forecast = forecast_tvl(df, days=7)
-    last = df['y'].iloc[-1]
-    predicted = forecast['yhat'].iloc[-1]
+    last = df["y"].iloc[-1]
+    predicted = forecast["yhat"].iloc[-1]
     drop = (last - predicted) / last if last > 0 else 0
-    logging.info(f"Liquidity forecast: Current TVL={last:,.0f}, 7d forecast={predicted:,.0f}, drop={drop*100:.2f}%")
+    logging.info(f"Liquidity forecast: Current TVL={last:,.0f}, 7d forecast={predicted:,.0f}, drop={drop * 100:.2f}%")
     return drop, last, predicted
 
 
@@ -59,7 +66,7 @@ def main():
     alert_msgs = []
 
     if negative_ratio > SENTIMENT_NEGATIVE_THRESHOLD:
-        msg = f"ALERT: Sentiment risk. Negative sentiment at {negative_ratio*100:.1f}%."
+        msg = f"ALERT: Sentiment risk. Negative sentiment at {negative_ratio * 100:.1f}%."
         logging.warning(msg)
         alert_msgs.append(msg)
 
@@ -69,7 +76,7 @@ def main():
         alert_msgs.append(msg)
 
     if drop > LIQUIDITY_DROP_PCT:
-        msg = f"ALERT: Liquidity risk. TVL forecast drop of {drop*100:.2f}%."
+        msg = f"ALERT: Liquidity risk. TVL forecast drop of {drop * 100:.2f}%."
         logging.warning(msg)
         alert_msgs.append(msg)
 
@@ -79,18 +86,18 @@ def main():
                 title="Blockchain Risk Alert!",
                 message=msg,
                 channel="slack",
-                metadata={"timestamp": datetime.datetime.utcnow().isoformat()}
+                metadata={"timestamp": datetime.datetime.utcnow().isoformat()},
             )
             alert_user(
                 title="Blockchain Risk Alert!",
                 message=msg,
                 channel="email",
-                metadata={"timestamp": datetime.datetime.utcnow().isoformat()}
+                metadata={"timestamp": datetime.datetime.utcnow().isoformat()},
             )
         logging.info("Alerts triggered.")
     else:
         logging.info("No thresholds breached; no alerts.")
 
+
 if __name__ == "__main__":
     main()
-

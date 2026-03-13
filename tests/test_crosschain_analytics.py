@@ -4,7 +4,7 @@ Tests for crosschain_analytics.correlate_events().
 
 from datetime import datetime, timedelta, timezone
 
-from crosschain_analytics import correlate_events
+from src.analytics.crosschain_analytics import correlate_events
 
 
 class TestCorrelateEvents:
@@ -68,8 +68,15 @@ class TestCorrelateEvents:
         """Each cluster dict should contain all expected fields."""
         result = correlate_events(sample_crosschain_events, window_minutes=60)
         required_keys = {
-            "upgrade", "chains", "count", "start_time", "end_time",
-            "time_spread_sec", "cross_chain", "confidence", "sample_events",
+            "upgrade",
+            "chains",
+            "count",
+            "start_time",
+            "end_time",
+            "time_spread_sec",
+            "cross_chain",
+            "confidence",
+            "sample_events",
         }
         for cluster in result["clusters"]:
             assert required_keys.issubset(cluster.keys())

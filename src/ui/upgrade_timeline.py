@@ -19,6 +19,7 @@ from src.models.volatility_model import get_protocol_volatility
 
 logger = logging.getLogger(__name__)
 
+
 async def fetch_and_display_proposals(g_client: GovernanceClient, space: str, organization: str):
     """Fetch proposals and display on a timeline using Plotly and Streamlit."""
     # Mock sentiment data
@@ -26,13 +27,9 @@ async def fetch_and_display_proposals(g_client: GovernanceClient, space: str, or
         "Uniswap": [
             "This proposal looks solid!",
             "Gov vote might shift liquidity.",
-            "Could be risky in the short term."
+            "Could be risky in the short term.",
         ],
-        "Aave": [
-            "No major changes, good stability.",
-            "I'm bullish on this proposal.",
-            "This vote is a game changer!"
-        ]
+        "Aave": ["No major changes, good stability.", "I'm bullish on this proposal.", "This vote is a game changer!"],
     }
 
     try:
@@ -46,19 +43,23 @@ async def fetch_and_display_proposals(g_client: GovernanceClient, space: str, or
             # Process Snapshot proposals
             for proposal in snapshot_proposals:
                 norm_prop = g_client.normalize_snapshot_proposal(proposal)
-                norm_prop['source'] = 'Snapshot'
-                norm_prop['protocol'] = space
-                tweets = mock_tweets_map.get(norm_prop['protocol'], ["Looks okay", "Neutral proposal", "Minor upgrade."])
-                norm_prop['sentiment_score'] = analyze_sentiment(tweets)
+                norm_prop["source"] = "Snapshot"
+                norm_prop["protocol"] = space
+                tweets = mock_tweets_map.get(
+                    norm_prop["protocol"], ["Looks okay", "Neutral proposal", "Minor upgrade."]
+                )
+                norm_prop["sentiment_score"] = analyze_sentiment(tweets)
                 all_proposals.append(norm_prop)
 
             # Process Tally proposals
             for proposal in tally_proposals:
                 norm_prop = g_client.normalize_tally_proposal(proposal)
-                norm_prop['source'] = 'Tally'
-                norm_prop['protocol'] = organization
-                tweets = mock_tweets_map.get(norm_prop['protocol'], ["Looks okay", "Neutral proposal", "Minor upgrade."])
-                norm_prop['sentiment_score'] = analyze_sentiment(tweets)
+                norm_prop["source"] = "Tally"
+                norm_prop["protocol"] = organization
+                tweets = mock_tweets_map.get(
+                    norm_prop["protocol"], ["Looks okay", "Neutral proposal", "Minor upgrade."]
+                )
+                norm_prop["sentiment_score"] = analyze_sentiment(tweets)
                 all_proposals.append(norm_prop)
 
             if not all_proposals:
@@ -66,7 +67,7 @@ async def fetch_and_display_proposals(g_client: GovernanceClient, space: str, or
                 return
 
             # Sort by creation date
-            all_proposals.sort(key=lambda x: x['created'], reverse=True)
+            all_proposals.sort(key=lambda x: x["created"], reverse=True)
 
             # Create timeline visualization
             create_timeline_chart(all_proposals)
@@ -78,6 +79,7 @@ async def fetch_and_display_proposals(g_client: GovernanceClient, space: str, or
         st.error(f"Error fetching proposals: {str(e)}")
         logger.error(f"Error in fetch_and_display_proposals: {e}")
 
+
 def create_timeline_chart(proposals):
     """Create an interactive timeline chart of proposals."""
     if not proposals:
@@ -86,16 +88,18 @@ def create_timeline_chart(proposals):
     # Prepare data for timeline
     df_data = []
     for i, prop in enumerate(proposals):
-        df_data.append({
-            'Task': f"{prop['title'][:50]}{'...' if len(prop['title']) > 50 else ''}",
-            'Start': prop['created'],
-            'Finish': prop['created'] + timedelta(hours=1),  # Small duration for visibility
-            'Status': prop['status'],
-            'Source': prop['source'],
-            'Protocol': prop['protocol'],
-            'Votes': prop['votes'],
-            'Full_Title': prop['title']
-        })
+        df_data.append(
+            {
+                "Task": f"{prop['title'][:50]}{'...' if len(prop['title']) > 50 else ''}",
+                "Start": prop["created"],
+                "Finish": prop["created"] + timedelta(hours=1),  # Small duration for visibility
+                "Status": prop["status"],
+                "Source": prop["source"],
+                "Protocol": prop["protocol"],
+                "Votes": prop["votes"],
+                "Full_Title": prop["title"],
+            }
+        )
 
     df = pd.DataFrame(df_data)
 
@@ -110,22 +114,20 @@ def create_timeline_chart(proposals):
         title="Protocol Upgrade Timeline",
         labels={"Task": "Proposal Title"},
         color_discrete_map={
-            'active': '#28a745',
-            'executed': '#17a2b8',
-            'failed': '#dc3545',
-            'pending': '#ffc107',
-            'closed': '#6c757d'
-        }
+            "active": "#28a745",
+            "executed": "#17a2b8",
+            "failed": "#dc3545",
+            "pending": "#ffc107",
+            "closed": "#6c757d",
+        },
     )
 
     fig.update_layout(
-        height=max(400, len(proposals) * 30),
-        showlegend=True,
-        xaxis_title="Timeline",
-        yaxis_title="Proposals"
+        height=max(400, len(proposals) * 30), showlegend=True, xaxis_title="Timeline", yaxis_title="Proposals"
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
 
 def create_proposal_table(proposals):
     """Create a detailed table of proposals with voting progress and volatility."""
@@ -158,46 +160,42 @@ def create_proposal_table(proposals):
     st.divider()
 
     # Initialize caches in session state
-    if 'volatility_cache' not in st.session_state:
+    if "volatility_cache" not in st.session_state:
         st.session_state.volatility_cache = {}
-    if 'sentiment_cache' not in st.session_state:
+    if "sentiment_cache" not in st.session_state:
         st.session_state.sentiment_cache = {}
 
     for prop in proposals:
         col1, col2, col3, col4, col5, col6, col7, col8, col9, col10 = st.columns([3, 1, 1, 1, 1, 1, 1, 1, 1, 1])
 
         with col1:
-            st.write(prop['title'])
+            st.write(prop["title"])
 
         with col2:
-            st.write(prop['protocol'])
+            st.write(prop["protocol"])
 
         with col3:
-            status_color = {
-                'active': '🟢',
-                'executed': '🔵',
-                'failed': '🔴',
-                'pending': '🟡',
-                'closed': '⚫'
-            }.get(prop['status'].lower(), '⚪')
+            status_color = {"active": "🟢", "executed": "🔵", "failed": "🔴", "pending": "🟡", "closed": "⚫"}.get(
+                prop["status"].lower(), "⚪"
+            )
             st.write(f"{status_color} {prop['status']}")
 
         with col4:
-            st.write(prop['created'].strftime("%m/%d/%Y"))
+            st.write(prop["created"].strftime("%m/%d/%Y"))
 
         with col5:
             # Volatility forecast with improved formatting
-            protocol_name = prop['protocol']
+            protocol_name = prop["protocol"]
             if protocol_name not in st.session_state.volatility_cache:
                 try:
                     # Run async function in sync context
                     vol_data = asyncio.run(get_protocol_volatility(protocol_name))
                     st.session_state.volatility_cache[protocol_name] = vol_data
                 except Exception as e:
-                    st.session_state.volatility_cache[protocol_name] = {'volatility': np.nan, 'error': str(e)}
+                    st.session_state.volatility_cache[protocol_name] = {"volatility": np.nan, "error": str(e)}
 
             vol_info = st.session_state.volatility_cache[protocol_name]
-            volatility = vol_info.get('volatility', np.nan)
+            volatility = vol_info.get("volatility", np.nan)
 
             # Import formatting functions
             from src.models.volatility_model import format_volatility, get_volatility_color
@@ -214,10 +212,10 @@ def create_proposal_table(proposals):
                     sentiment_data = get_sentiment_for_protocol(protocol_name)
                     st.session_state.sentiment_cache[protocol_name] = sentiment_data
                 except Exception as e:
-                    st.session_state.sentiment_cache[protocol_name] = {'average_sentiment': 0.0, 'error': str(e)}
+                    st.session_state.sentiment_cache[protocol_name] = {"average_sentiment": 0.0, "error": str(e)}
 
             sentiment_info = st.session_state.sentiment_cache[protocol_name]
-            sent_score = sentiment_info.get('average_sentiment', 0.0)
+            sent_score = sentiment_info.get("average_sentiment", 0.0)
             sent_color = get_sentiment_color(sent_score)
             sentiment_category = categorize_sentiment(sent_score)
 
@@ -225,7 +223,7 @@ def create_proposal_table(proposals):
 
         with col7:
             # Sentiment score (Mock)
-            sentiment = prop.get('sentiment_score', 0)
+            sentiment = prop.get("sentiment_score", 0)
             if sentiment > 0.3:
                 sentiment_label = "😊 Positive"
             elif sentiment < -0.3:
@@ -238,22 +236,26 @@ def create_proposal_table(proposals):
             # Actual sentiment from an API
             # This represents a placeholder for real-time data integration
             # Replace this logic with proper function call to fetch actual sentiment
-            actual_sentiment = prop.get('sentiment_score', 0)  # Replace with actual sentiment fetching logic
-            true_label = "😊 Positive" if actual_sentiment > 0.3 else ("😠 Negative" if actual_sentiment < -0.3 else "😐 Neutral")
+            actual_sentiment = prop.get("sentiment_score", 0)  # Replace with actual sentiment fetching logic
+            true_label = (
+                "😊 Positive"
+                if actual_sentiment > 0.3
+                else ("😠 Negative" if actual_sentiment < -0.3 else "😐 Neutral")
+            )
             st.metric(label="Sentiment (API)", value=true_label, delta=f"{actual_sentiment}")
 
         with col9:
             # Forecast TVL
-            protocol_slug = prop['protocol'].lower().replace(' ', '-')
+            protocol_slug = prop["protocol"].lower().replace(" ", "-")
             df_tvl = await get_tvl_history(protocol_slug)
-            current_tvl = df_tvl['y'].iloc[-1]
+            current_tvl = df_tvl["y"].iloc[-1]
             forecasted_tvl = forecast_tvl(df_tvl)
             delta_tvl = forecasted_tvl - current_tvl
             st.metric("TVL Forecast (7d)", f"${forecasted_tvl:,.2f}", delta=f"${delta_tvl:+,.2f}")
 
         with col10:
             # Create a simple voting progress bar
-            votes = prop.get('votes', 0)
+            votes = prop.get("votes", 0)
             if isinstance(votes, (int, float)) and votes > 0:
                 st.metric("Total Votes", f"{votes:,.0f}")
             else:
@@ -261,37 +263,30 @@ def create_proposal_table(proposals):
 
         st.divider()
 
+
 def create_sidebar():
     """Create sidebar with configuration options."""
     st.sidebar.header("Configuration")
 
     # Network selection
-    network = st.sidebar.selectbox(
-        "Select Network",
-        ["Ethereum", "Polygon", "Arbitrum", "All Networks"]
-    )
+    network = st.sidebar.selectbox("Select Network", ["Ethereum", "Polygon", "Arbitrum", "All Networks"])
 
     # Time filter
-    time_filter = st.sidebar.selectbox(
-        "Time Range",
-        ["Last 24 hours", "Last 7 days", "Last 30 days", "All time"]
-    )
+    time_filter = st.sidebar.selectbox("Time Range", ["Last 24 hours", "Last 7 days", "Last 30 days", "All time"])
 
     # Status filter
     status_filter = st.sidebar.multiselect(
         "Filter by Status",
         ["active", "executed", "failed", "pending", "closed"],
-        default=["active", "executed", "pending"]
+        default=["active", "executed", "pending"],
     )
 
     return network, time_filter, status_filter
 
+
 async def main():
     st.set_page_config(
-        page_title="Protocol Upgrade Monitor",
-        page_icon="📊",
-        layout="wide",
-        initial_sidebar_state="expanded"
+        page_title="Protocol Upgrade Monitor", page_icon="📊", layout="wide", initial_sidebar_state="expanded"
     )
 
     st.title("🔗 Blockchain Protocol Upgrade Timeline")
@@ -311,15 +306,13 @@ async def main():
         space = st.text_input(
             "Snapshot Space ID:",
             placeholder="e.g., uniswap, aave.eth, compound",
-            help="Enter the Snapshot space identifier for the protocol"
+            help="Enter the Snapshot space identifier for the protocol",
         )
 
     with col2:
         st.subheader("🏛️ Governance Platform")
         organization = st.text_input(
-            "Tally Organization:",
-            placeholder="e.g., compound, aave",
-            help="Enter the Tally organization identifier"
+            "Tally Organization:", placeholder="e.g., compound, aave", help="Enter the Tally organization identifier"
         )
 
     # Action buttons
@@ -350,22 +343,10 @@ async def main():
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.info(
-                "**Snapshot Spaces:**\n"
-                "• uniswap\n"
-                "• aave.eth\n"
-                "• compound\n"
-                "• ens.eth"
-            )
+            st.info("**Snapshot Spaces:**\n• uniswap\n• aave.eth\n• compound\n• ens.eth")
 
         with col2:
-            st.info(
-                "**Tally Organizations:**\n"
-                "• compound\n"
-                "• aave\n"
-                "• gitcoin\n"
-                "• frax"
-            )
+            st.info("**Tally Organizations:**\n• compound\n• aave\n• gitcoin\n• frax")
 
         with col3:
             st.info(
@@ -376,5 +357,6 @@ async def main():
                 "• Risk assessment alerts"
             )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     asyncio.run(main())

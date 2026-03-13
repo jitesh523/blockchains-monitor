@@ -17,32 +17,32 @@ class EnhancedTimeline:
     def __init__(self):
         self.mock_proposals = [
             {
-                'title': 'Uniswap V4 Hooks Implementation',
-                'protocol': 'Uniswap',
-                'status': 'active',
-                'created': '2024-01-15',
-                'votes': 25000,
-                'description': 'Implement hooks system for enhanced customization',
-                'risk_factors': ['High complexity', 'Breaking changes']
+                "title": "Uniswap V4 Hooks Implementation",
+                "protocol": "Uniswap",
+                "status": "active",
+                "created": "2024-01-15",
+                "votes": 25000,
+                "description": "Implement hooks system for enhanced customization",
+                "risk_factors": ["High complexity", "Breaking changes"],
             },
             {
-                'title': 'Aave V3 Interest Rate Model Update',
-                'protocol': 'Aave',
-                'status': 'pending',
-                'created': '2024-01-10',
-                'votes': 18500,
-                'description': 'Update interest rate calculations for better efficiency',
-                'risk_factors': ['Market impact', 'Liquidation risks']
+                "title": "Aave V3 Interest Rate Model Update",
+                "protocol": "Aave",
+                "status": "pending",
+                "created": "2024-01-10",
+                "votes": 18500,
+                "description": "Update interest rate calculations for better efficiency",
+                "risk_factors": ["Market impact", "Liquidation risks"],
             },
             {
-                'title': 'Compound Governance Token Migration',
-                'protocol': 'Compound',
-                'status': 'executed',
-                'created': '2024-01-05',
-                'votes': 32000,
-                'description': 'Migrate to new governance token structure',
-                'risk_factors': ['Token migration', 'Governance disruption']
-            }
+                "title": "Compound Governance Token Migration",
+                "protocol": "Compound",
+                "status": "executed",
+                "created": "2024-01-05",
+                "votes": 32000,
+                "description": "Migrate to new governance token structure",
+                "risk_factors": ["Token migration", "Governance disruption"],
+            },
         ]
 
     async def render_timeline(self):
@@ -77,25 +77,26 @@ class EnhancedTimeline:
 
         if search_query:
             filtered = [
-                p for p in filtered
-                if search_query.lower() in p['title'].lower() or
-                   search_query.lower() in p['protocol'].lower() or
-                   search_query.lower() in p['status'].lower()
+                p
+                for p in filtered
+                if search_query.lower() in p["title"].lower()
+                or search_query.lower() in p["protocol"].lower()
+                or search_query.lower() in p["status"].lower()
             ]
 
         if status_filter != "All":
-            filtered = [p for p in filtered if p['status'].lower() == status_filter.lower()]
+            filtered = [p for p in filtered if p["status"].lower() == status_filter.lower()]
 
         return filtered
 
     def _sort_proposals(self, proposals: List[Dict], sort_by: str) -> List[Dict]:
         """Sort proposals based on selected criteria."""
         if sort_by == "Date":
-            return sorted(proposals, key=lambda x: x['created'], reverse=True)
+            return sorted(proposals, key=lambda x: x["created"], reverse=True)
         elif sort_by == "Votes":
-            return sorted(proposals, key=lambda x: x['votes'], reverse=True)
+            return sorted(proposals, key=lambda x: x["votes"], reverse=True)
         elif sort_by == "Protocol":
-            return sorted(proposals, key=lambda x: x['protocol'])
+            return sorted(proposals, key=lambda x: x["protocol"])
         else:
             return proposals
 
@@ -103,7 +104,6 @@ class EnhancedTimeline:
         """Render proposal cards with modern styling."""
         for proposal in proposals:
             with st.expander(f"🏛️ {proposal['title']}", expanded=False):
-
                 # Create three columns for better layout
                 col1, col2, col3 = st.columns([2, 1, 1])
 
@@ -114,16 +114,16 @@ class EnhancedTimeline:
                     st.markdown(f"**Description:** {proposal['description']}")
 
                     # Risk factors
-                    if proposal.get('risk_factors'):
+                    if proposal.get("risk_factors"):
                         st.markdown("**Risk Factors:**")
-                        for factor in proposal['risk_factors']:
+                        for factor in proposal["risk_factors"]:
                             st.markdown(f"• {factor}")
 
                 with col2:
                     # Get volatility data with proper formatting
                     try:
-                        vol_data = await get_protocol_volatility(proposal['protocol'].lower())
-                        volatility = vol_data.get('volatility')
+                        vol_data = await get_protocol_volatility(proposal["protocol"].lower())
+                        volatility = vol_data.get("volatility")
 
                         # Import formatting functions
                         from src.models.volatility_model import format_volatility, get_volatility_color
@@ -133,7 +133,7 @@ class EnhancedTimeline:
 
                         # Use HTML with title attribute for tooltip
                         volatility_html = f"""
-                        <div title="{vol_data.get('data_points', 0)} data points used for forecast">
+                        <div title="{vol_data.get("data_points", 0)} data points used for forecast">
                             <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Volatility</div>
                             <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">{vol_color} {formatted_volatility}</div>
                         </div>
@@ -141,15 +141,18 @@ class EnhancedTimeline:
                         st.markdown(volatility_html, unsafe_allow_html=True)
 
                     except Exception:
-                        st.markdown("""
+                        st.markdown(
+                            """
                         <div title="Unable to fetch volatility data">
                             <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Volatility</div>
                             <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">⚪ --</div>
                         </div>
-                        """, unsafe_allow_html=True)
+                        """,
+                            unsafe_allow_html=True,
+                        )
 
                     # Sentiment analysis with improved formatting
-                    mock_tweets = self._get_mock_tweets(proposal['protocol'])
+                    mock_tweets = self._get_mock_tweets(proposal["protocol"])
                     sentiment_score = analyze_sentiment(mock_tweets)
                     sentiment_label = self._get_sentiment_label(sentiment_score)
 
@@ -165,7 +168,7 @@ class EnhancedTimeline:
                     votes_html = f"""
                     <div title="Total governance votes cast">
                         <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Total Votes</div>
-                        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">{proposal['votes']:,}</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">{proposal["votes"]:,}</div>
                     </div>
                     """
                     st.markdown(votes_html, unsafe_allow_html=True)
@@ -173,12 +176,12 @@ class EnhancedTimeline:
                 with col3:
                     # Risk assessment
                     try:
-                        risk_data = await get_risk_assessment(proposal['protocol'].lower())
-                        risk_score = risk_data.get('overall_risk_score', 50)
+                        risk_data = await get_risk_assessment(proposal["protocol"].lower())
+                        risk_score = risk_data.get("overall_risk_score", 50)
                         create_risk_indicator(risk_score)
 
                         # Recommendations
-                        recommendations = risk_data.get('recommendations', [])
+                        recommendations = risk_data.get("recommendations", [])
                         if recommendations:
                             st.markdown("**Recommendations:**")
                             for rec in recommendations[:2]:  # Show first 2
@@ -199,12 +202,7 @@ class EnhancedTimeline:
 
     def _get_status_badge(self, status: str) -> str:
         """Get styled status badge."""
-        status_colors = {
-            'active': '🟢',
-            'pending': '🟡',
-            'executed': '🔵',
-            'failed': '🔴'
-        }
+        status_colors = {"active": "🟢", "pending": "🟡", "executed": "🔵", "failed": "🔴"}
         return f"{status_colors.get(status.lower(), '⚪')} {status.title()}"
 
     def _get_sentiment_label(self, sentiment_score: float) -> str:
@@ -219,21 +217,21 @@ class EnhancedTimeline:
     def _get_mock_tweets(self, protocol: str) -> List[str]:
         """Get mock tweets for sentiment analysis."""
         mock_tweets = {
-            'uniswap': [
+            "uniswap": [
                 "Uniswap V4 looks promising with the new hooks!",
                 "Not sure about the complexity of this upgrade.",
-                "Great innovation from the Uniswap team!"
+                "Great innovation from the Uniswap team!",
             ],
-            'aave': [
+            "aave": [
                 "Aave's interest rate model update is needed.",
                 "Worried about liquidation risks with this change.",
-                "Bullish on AAVE after this proposal!"
+                "Bullish on AAVE after this proposal!",
             ],
-            'compound': [
+            "compound": [
                 "Compound governance migration is risky.",
                 "Love the new token structure approach.",
-                "COMP holders should vote carefully on this."
-            ]
+                "COMP holders should vote carefully on this.",
+            ],
         }
         return mock_tweets.get(protocol.lower(), ["Looks interesting", "Need more info", "Cautiously optimistic"])
 
@@ -244,43 +242,41 @@ class EnhancedTimeline:
         # Prepare data for timeline
         timeline_data = []
         for proposal in proposals:
-            timeline_data.append({
-                'Protocol': proposal['protocol'],
-                'Title': proposal['title'][:30] + '...' if len(proposal['title']) > 30 else proposal['title'],
-                'Status': proposal['status'],
-                'Created': proposal['created'],
-                'Votes': proposal['votes']
-            })
+            timeline_data.append(
+                {
+                    "Protocol": proposal["protocol"],
+                    "Title": proposal["title"][:30] + "..." if len(proposal["title"]) > 30 else proposal["title"],
+                    "Status": proposal["status"],
+                    "Created": proposal["created"],
+                    "Votes": proposal["votes"],
+                }
+            )
 
         df = pd.DataFrame(timeline_data)
 
         # Create interactive timeline
         fig = px.scatter(
             df,
-            x='Created',
-            y='Protocol',
-            size='Votes',
-            color='Status',
-            hover_data=['Title', 'Votes'],
+            x="Created",
+            y="Protocol",
+            size="Votes",
+            color="Status",
+            hover_data=["Title", "Votes"],
             title="Protocol Upgrade Timeline",
-            color_discrete_map={
-                'active': '#51CF66',
-                'pending': '#FFD43B',
-                'executed': '#00D4FF',
-                'failed': '#FF5252'
-            }
+            color_discrete_map={"active": "#51CF66", "pending": "#FFD43B", "executed": "#00D4FF", "failed": "#FF5252"},
         )
 
         fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#FAFAFA'),
-            xaxis=dict(gridcolor='#2D3748'),
-            yaxis=dict(gridcolor='#2D3748'),
-            height=400
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#FAFAFA"),
+            xaxis=dict(gridcolor="#2D3748"),
+            yaxis=dict(gridcolor="#2D3748"),
+            height=400,
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
 
 # Main function to be called from the app
 async def render_enhanced_timeline():
@@ -305,11 +301,11 @@ async def render_enhanced_timeline():
             st.metric("Total Proposals", len(timeline.mock_proposals))
 
         with col2:
-            active_count = len([p for p in timeline.mock_proposals if p['status'] == 'active'])
+            active_count = len([p for p in timeline.mock_proposals if p["status"] == "active"])
             st.metric("Active Proposals", active_count)
 
         with col3:
-            total_votes = sum(p['votes'] for p in timeline.mock_proposals)
+            total_votes = sum(p["votes"] for p in timeline.mock_proposals)
             st.metric("Total Votes", f"{total_votes:,}")
 
         with col4:
@@ -331,6 +327,7 @@ async def render_enhanced_timeline():
         # Risk thresholds
         st.slider("Risk alert threshold", 0, 100, 75)
         st.slider("Volatility alert threshold", 0, 100, 60)
+
 
 if __name__ == "__main__":
     asyncio.run(render_enhanced_timeline())

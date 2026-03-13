@@ -8,7 +8,7 @@ import os
 import sys
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from src.models.liquidity_model import forecast_tvl, get_tvl_history
 from src.models.risk_model import get_risk_assessment
@@ -22,7 +22,7 @@ async def test_integrated_models():
     print("=" * 60)
 
     # Test protocols
-    protocols = ['uniswap', 'aave', 'ethereum']
+    protocols = ["uniswap", "aave", "ethereum"]
 
     for protocol in protocols:
         print(f"\n📊 Testing {protocol.upper()}:")
@@ -45,17 +45,13 @@ async def test_integrated_models():
         # Test liquidity (TVL)
         try:
             # Map protocol names to DeFiLlama slugs
-            protocol_mapping = {
-                'uniswap': 'uniswap',
-                'aave': 'aave',
-                'ethereum': 'ethereum'
-            }
+            protocol_mapping = {"uniswap": "uniswap", "aave": "aave", "ethereum": "ethereum"}
 
             slug = protocol_mapping.get(protocol, protocol)
             tvl_data = await get_tvl_history(slug)
 
             if not tvl_data.empty:
-                current_tvl = tvl_data['y'].iloc[-1]
+                current_tvl = tvl_data["y"].iloc[-1]
                 forecasted_tvl = forecast_tvl(tvl_data)
                 delta = forecasted_tvl - current_tvl
 
@@ -76,6 +72,7 @@ async def test_integrated_models():
         except Exception as e:
             print(f"  Risk Assessment Error: {e}")
 
+
 async def test_mock_sentiment():
     """Test mock sentiment analysis."""
     print("\n🎭 Testing Mock Sentiment Analysis")
@@ -85,13 +82,9 @@ async def test_mock_sentiment():
         "Uniswap": [
             "This proposal looks solid!",
             "Gov vote might shift liquidity.",
-            "Could be risky in the short term."
+            "Could be risky in the short term.",
         ],
-        "Aave": [
-            "No major changes, good stability.",
-            "I'm bullish on this proposal.",
-            "This vote is a game changer!"
-        ]
+        "Aave": ["No major changes, good stability.", "I'm bullish on this proposal.", "This vote is a game changer!"],
     }
 
     for protocol, tweets in mock_tweets.items():
@@ -110,6 +103,7 @@ async def test_mock_sentiment():
             sentiment_label = "😐 Neutral"
 
         print(f"  Sentiment Label: {sentiment_label}")
+
 
 if __name__ == "__main__":
     print("🚀 Starting Integrated Model Tests")

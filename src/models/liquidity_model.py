@@ -1,4 +1,3 @@
-
 import httpx
 import pandas as pd
 from prophet import Prophet
@@ -16,6 +15,7 @@ async def get_tvl_history(protocol_slug: str, days: int = 90) -> pd.DataFrame:
     df = df.rename(columns={"date": "ds", "totalLiquidityUSD": "y"})
     return df[["ds", "y"]].dropna()
 
+
 def forecast_tvl(df: pd.DataFrame, future_days: int = 7) -> float:
     """Forecast future TVL using Prophet."""
     model = Prophet()
@@ -23,6 +23,7 @@ def forecast_tvl(df: pd.DataFrame, future_days: int = 7) -> float:
     future = model.make_future_dataframe(periods=future_days)
     forecast = model.predict(future)
     return round(float(forecast["yhat"].iloc[-1]), 2)
+
 
 # Example usage
 async def display_tvl_forecast(protocol_slug: str):
@@ -34,6 +35,7 @@ async def display_tvl_forecast(protocol_slug: str):
     print(f"Current TVL: ${current_tvl:,.2f}")
     print(f"Forecasted TVL: ${forecasted_tvl:,.2f}")
     print(f"Change: {delta:+,.2f}")
+
 
 # If used with a UI component like Streamlit's st.metric, you could do:
 # st.metric("TVL Forecast (7d)", f"${forecasted_tvl:,.2f}", delta=f"{delta:+,.2f}")

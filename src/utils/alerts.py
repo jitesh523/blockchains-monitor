@@ -2,6 +2,7 @@
 alerts.py
 Stub module for push-based alerting. In production, implement services for email, webhooks, and Slack/Discord alerts.
 """
+
 import os
 import smtplib
 from typing import Any, Dict
@@ -14,6 +15,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 EMAIL_TO = os.getenv("EMAIL_TO")
+
 
 # Example usage: alert_user('Risk breached', 'Threshold exceeded', channel='slack')
 def alert_user(title: str, message: str, channel: str = "email", metadata: Dict[str, Any] = None):
@@ -36,6 +38,7 @@ def alert_user(title: str, message: str, channel: str = "email", metadata: Dict[
     if metadata:
         print(f"Metadata: {metadata}")
 
+
 def send_slack_alert(title, message, metadata=None):
     payload = {"text": f"*{title}*: {message}"}
     if metadata:
@@ -46,6 +49,7 @@ def send_slack_alert(title, message, metadata=None):
         print("[SLACK] Alert sent successfully.")
     except Exception as e:
         print(f"[SLACK] Sending failed: {e}")
+
 
 def send_email_alert(subject, body):
     if not all([SMTP_SERVER, SMTP_USER, SMTP_PASS, EMAIL_TO]):
@@ -61,12 +65,12 @@ def send_email_alert(subject, body):
     except Exception as e:
         print(f"[EMAIL] Sending failed: {e}")
 
+
 # Example trigger
 if __name__ == "__main__":
     alert_user(
         title="Risk Breach Detected",
         message="Upgrade X introduces abnormal volatility.",
         channel="slack",
-        metadata={"risk_score": 99, "chain": "Ethereum"}
+        metadata={"risk_score": 99, "chain": "Ethereum"},
     )
-
