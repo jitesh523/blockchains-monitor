@@ -11,7 +11,7 @@ import sys
 import streamlit as st
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from config.config import Config
 from src.ui.data_visualizations import render_analytics_dashboard, render_sidebar_sparklines
@@ -23,12 +23,10 @@ from src.ui.theme import apply_theme, create_animated_title, create_theme_toggle
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('blockchain_monitor.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("blockchain_monitor.log"), logging.StreamHandler(sys.stdout)],
 )
+
 
 def main():
     """Main application entry point."""
@@ -36,7 +34,7 @@ def main():
         page_title="Blockchain Protocol Upgrade Monitor",
         page_icon="🔗",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="expanded",
     )
 
     # Validate configuration
@@ -61,7 +59,7 @@ def main():
     st.sidebar.title("🔗 Protocol Monitor")
     page = st.sidebar.selectbox(
         "Navigation",
-        ["📊 Upgrade Timeline", "📈 Risk Dashboard", "📊 Analytics", "🎯 Execution Guidance", "⚙️ Settings"]
+        ["📊 Upgrade Timeline", "📈 Risk Dashboard", "📊 Analytics", "🎯 Execution Guidance", "⚙️ Settings"],
     )
 
     if page == "📊 Upgrade Timeline":
@@ -108,6 +106,7 @@ def main():
         # Additional settings
         st.subheader("🔧 Application Settings")
         st.info("Additional settings coming soon...")
+
 
 if __name__ == "__main__":
     main()

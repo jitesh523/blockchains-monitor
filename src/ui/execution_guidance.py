@@ -10,6 +10,7 @@ def suggest_execution(risk_score: float) -> str:
     else:
         return "🟢 Low risk. No action needed. Opportunity to enter long positions."
 
+
 def render_execution_guidance(risk_score: float):
     """Render execution guidance in the Streamlit UI based on risk score."""
     from src.ui.theme import create_risk_indicator
@@ -55,11 +56,7 @@ def render_execution_guidance(risk_score: float):
     # Recent activity
     st.markdown("#### 🕰️ Recent Activity")
 
-    activities = [
-        "🟢 Uniswap proposal approved",
-        "🟡 Aave governance vote started",
-        "🔴 Compound risk alert triggered"
-    ]
+    activities = ["🟢 Uniswap proposal approved", "🟡 Aave governance vote started", "🔴 Compound risk alert triggered"]
 
     for activity in activities:
         st.markdown(f"• {activity}")
@@ -77,6 +74,7 @@ def render_execution_guidance(risk_score: float):
 
     return display_proposal_card
 
+
 # Example usage
 if __name__ == "__main__":
     st.title("Execution Guidance Example")
@@ -84,20 +82,15 @@ if __name__ == "__main__":
 
     # Mock proposal details
     example_proposal = {
-        'title': 'Improve Liquidity Efficiency',
-        'created_date': "2025-07-14T10:00:00",  # Mock date
-        'status': 'Active',
-        'network': 'Ethereum'
+        "title": "Improve Liquidity Efficiency",
+        "created_date": "2025-07-14T10:00:00",  # Mock date
+        "status": "Active",
+        "network": "Ethereum",
     }
 
     render_execution_guidance(example_risk_score)
 
     display_proposal_card = render_execution_guidance(example_risk_score)
     display_proposal_card(
-        example_proposal,
-        volatility=24.2,
-        sentiment_label="😊 Positive",
-        sentiment=0.58,
-        risk_score=example_risk_score
+        example_proposal, volatility=24.2, sentiment_label="😊 Positive", sentiment=0.58, risk_score=example_risk_score
     )
-

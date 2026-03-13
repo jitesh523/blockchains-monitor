@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 COINGECKO_URL = "https://api.coingecko.com/api/v3/coins/{id}/market_chart"
 
+
 async def get_prices(token_id: str, days: int = 180) -> pd.Series:
     """Fetch daily price data from CoinGecko API."""
     params = {"vs_currency": "usd", "days": days, "interval": "daily"}
@@ -33,13 +34,14 @@ async def get_prices(token_id: str, days: int = 180) -> pd.Series:
             prices = r.json()["prices"]
 
         # CoinGecko returns [[ts, price], ...]
-        s = pd.Series({datetime.utcfromtimestamp(ts/1000): p for ts, p in prices})
+        s = pd.Series({datetime.utcfromtimestamp(ts / 1000): p for ts, p in prices})
         s.sort_index(inplace=True)
         return s
 
     except Exception as e:
         logger.error(f"Error fetching prices for {token_id}: {e}")
         return pd.Series(dtype=float)
+
 
 def forecast_volatility(prices: pd.Series, horizon: int = 3) -> float:
     """Fit GARCH(1,1) model and forecast volatility."""
@@ -66,19 +68,21 @@ def forecast_volatility(prices: pd.Series, horizon: int = 3) -> float:
         logger.error(f"Error forecasting volatility: {e}")
         return np.nan
 
+
 def get_token_mapping(protocol_name: str) -> str:
     """Map protocol names to CoinGecko token IDs."""
     mapping = {
-        'uniswap': 'uniswap',
-        'aave': 'aave',
-        'compound': 'compound-governance-token',
-        'ens': 'ethereum-name-service',
-        'ethereum': 'ethereum',
-        'polygon': 'matic-network',
-        'arbitrum': 'arbitrum'
+        "uniswap": "uniswap",
+        "aave": "aave",
+        "compound": "compound-governance-token",
+        "ens": "ethereum-name-service",
+        "ethereum": "ethereum",
+        "polygon": "matic-network",
+        "arbitrum": "arbitrum",
     }
 
-    return mapping.get(protocol_name.lower(), 'ethereum')
+    return mapping.get(protocol_name.lower(), "ethereum")
+
 
 async def get_protocol_volatility(protocol_name: str, days: int = 180, horizon: int = 3) -> dict:
     """Get volatility forecast for a specific protocol."""
@@ -87,27 +91,29 @@ async def get_protocol_volatility(protocol_name: str, days: int = 180, horizon: 
     try:
         prices = await get_prices(token_id, days)
         if prices.empty:
-            return {'volatility': np.nan, 'error': 'No price data available'}
+            return {"volatility": np.nan, "error": "No price data available"}
 
         volatility = forecast_volatility(prices, horizon)
 
         return {
-            'volatility': volatility,
-            'token_id': token_id,
-            'data_points': len(prices),
-            'latest_price': prices.iloc[-1] if not prices.empty else np.nan,
-            'price_change_24h': ((prices.iloc[-1] / prices.iloc[-2]) - 1) * 100 if len(prices) > 1 else np.nan
+            "volatility": volatility,
+            "token_id": token_id,
+            "data_points": len(prices),
+            "latest_price": prices.iloc[-1] if not prices.empty else np.nan,
+            "price_change_24h": ((prices.iloc[-1] / prices.iloc[-2]) - 1) * 100 if len(prices) > 1 else np.nan,
         }
 
     except Exception as e:
         logger.error(f"Error getting protocol volatility for {protocol_name}: {e}")
-        return {'volatility': np.nan, 'error': str(e)}
+        return {"volatility": np.nan, "error": str(e)}
+
 
 def format_volatility(volatility: float) -> str:
     """Format volatility value for display, handling NaN values."""
     if volatility is None or (isinstance(volatility, float) and np.isnan(volatility)):
         return "--"
     return f"{volatility:.1f}%"
+
 
 def format_metric_value(value: float, suffix: str = "", fallback: str = "--") -> str:
     """Format any metric value for display, handling NaN and None values."""
@@ -116,6 +122,7 @@ def format_metric_value(value: float, suffix: str = "", fallback: str = "--") ->
     if isinstance(value, (int, float)):
         return f"{value:.1f}{suffix}"
     return str(value)
+
 
 def get_volatility_color(volatility: float) -> str:
     """Get color indicator for volatility level."""

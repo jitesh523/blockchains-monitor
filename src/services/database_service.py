@@ -1,6 +1,7 @@
 """
 Database service with PostgreSQL integration for historical data storage.
 """
+
 import json
 import logging
 import os
@@ -12,6 +13,7 @@ import asyncpg
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class PriceData:
     token: str
@@ -20,6 +22,7 @@ class PriceData:
     volume_24h: float = 0.0
     market_cap: float = 0.0
 
+
 @dataclass
 class SentimentData:
     source: str
@@ -27,6 +30,7 @@ class SentimentData:
     sentiment_score: float
     timestamp: datetime
     metadata: Dict[str, Any] = None
+
 
 @dataclass
 class RiskEvent:
@@ -37,23 +41,18 @@ class RiskEvent:
     timestamp: datetime
     metadata: Dict[str, Any] = None
 
+
 class DatabaseService:
     def __init__(self, database_url: str = None):
         self.database_url = database_url or os.getenv(
-            'DATABASE_URL',
-            'postgresql://user:password@localhost:5432/blockchain_monitor'
+            "DATABASE_URL", "postgresql://user:password@localhost:5432/blockchain_monitor"
         )
         self.pool = None
 
     async def connect(self):
         """Initialize database connection pool"""
         try:
-            self.pool = await asyncpg.create_pool(
-                self.database_url,
-                min_size=5,
-                max_size=20,
-                command_timeout=60
-            )
+            self.pool = await asyncpg.create_pool(self.database_url, min_size=5, max_size=20, command_timeout=60)
             logger.info("Database connection pool established")
             await self.create_tables()
         except Exception as e:
@@ -119,7 +118,7 @@ class DatabaseService:
                 timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             )
-            """
+            """,
         ]
 
         # Create indexes
@@ -128,7 +127,7 @@ class DatabaseService:
             "CREATE INDEX IF NOT EXISTS idx_sentiment_data_timestamp ON sentiment_data(timestamp)",
             "CREATE INDEX IF NOT EXISTS idx_risk_events_timestamp ON risk_events(timestamp)",
             "CREATE INDEX IF NOT EXISTS idx_protocol_upgrades_protocol ON protocol_upgrades(protocol)",
-            "CREATE INDEX IF NOT EXISTS idx_tvl_data_protocol_timestamp ON tvl_data(protocol, timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_tvl_data_protocol_timestamp ON tvl_data(protocol, timestamp)",
         ]
 
         async with self.pool.acquire() as conn:
@@ -148,7 +147,11 @@ class DatabaseService:
                 INSERT INTO price_data (token, price, volume_24h, market_cap, timestamp)
                 VALUES ($1, $2, $3, $4, $5)
                 """,
-                data.token, data.price, data.volume_24h, data.market_cap, data.timestamp
+                data.token,
+                data.price,
+                data.volume_24h,
+                data.market_cap,
+                data.timestamp,
             )
 
     async def insert_sentiment_data(self, data: SentimentData):
@@ -159,8 +162,11 @@ class DatabaseService:
                 INSERT INTO sentiment_data (source, content, sentiment_score, timestamp, metadata)
                 VALUES ($1, $2, $3, $4, $5)
                 """,
-                data.source, data.content, data.sentiment_score, data.timestamp,
-                json.dumps(data.metadata or {})
+                data.source,
+                data.content,
+                data.sentiment_score,
+                data.timestamp,
+                json.dumps(data.metadata or {}),
             )
 
     async def insert_risk_event(self, event: RiskEvent):
@@ -171,8 +177,12 @@ class DatabaseService:
                 INSERT INTO risk_events (event_type, protocol, risk_score, description, timestamp, metadata)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 """,
-                event.event_type, event.protocol, event.risk_score, event.description,
-                event.timestamp, json.dumps(event.metadata or {})
+                event.event_type,
+                event.protocol,
+                event.risk_score,
+                event.description,
+                event.timestamp,
+                json.dumps(event.metadata or {}),
             )
 
     async def get_price_history(self, token: str, days: int = 30) -> List[Dict]:
@@ -185,7 +195,8 @@ class DatabaseService:
                 WHERE token = $1 AND timestamp > NOW() - INTERVAL '%s days'
                 ORDER BY timestamp ASC
                 """,
-                token, days
+                token,
+                days,
             )
             return [dict(row) for row in rows]
 
@@ -203,7 +214,7 @@ class DatabaseService:
                 GROUP BY hour
                 ORDER BY hour ASC
                 """,
-                hours
+                hours,
             )
             return [dict(row) for row in rows]
 
@@ -218,7 +229,8 @@ class DatabaseService:
                     WHERE protocol = $1 AND timestamp > NOW() - INTERVAL '%s days'
                     ORDER BY timestamp DESC
                     """,
-                    protocol, days
+                    protocol,
+                    days,
                 )
             else:
                 rows = await conn.fetch(
@@ -228,7 +240,7 @@ class DatabaseService:
                     WHERE timestamp > NOW() - INTERVAL '%s days'
                     ORDER BY timestamp DESC
                     """,
-                    days
+                    days,
                 )
             return [dict(row) for row in rows]
 
@@ -260,9 +272,9 @@ class DatabaseService:
             )
 
             return {
-                'protocol_events': [dict(row) for row in protocol_events],
-                'sentiment_trend': [dict(row) for row in sentiment_trend],
-                'last_updated': datetime.now().isoformat()
+                "protocol_events": [dict(row) for row in protocol_events],
+                "sentiment_trend": [dict(row) for row in sentiment_trend],
+                "last_updated": datetime.now().isoformat(),
             }
 
     async def cleanup_old_data(self, retention_days: int = 90):
@@ -271,23 +283,14 @@ class DatabaseService:
 
         async with self.pool.acquire() as conn:
             # Clean up old price data
-            await conn.execute(
-                "DELETE FROM price_data WHERE timestamp < $1",
-                cutoff_date
-            )
+            await conn.execute("DELETE FROM price_data WHERE timestamp < $1", cutoff_date)
 
             # Clean up old sentiment data
-            await conn.execute(
-                "DELETE FROM sentiment_data WHERE timestamp < $1",
-                cutoff_date
-            )
+            await conn.execute("DELETE FROM sentiment_data WHERE timestamp < $1", cutoff_date)
 
             # Keep risk events longer (1 year)
             risk_cutoff = datetime.now() - timedelta(days=365)
-            await conn.execute(
-                "DELETE FROM risk_events WHERE timestamp < $1",
-                risk_cutoff
-            )
+            await conn.execute("DELETE FROM risk_events WHERE timestamp < $1", risk_cutoff)
 
         logger.info(f"Cleaned up data older than {retention_days} days")
 
@@ -297,12 +300,15 @@ class DatabaseService:
             await self.pool.close()
             logger.info("Database connection pool closed")
 
+
 # Global database instance
 db_service = DatabaseService()
+
 
 async def init_database():
     """Initialize database connection"""
     await db_service.connect()
+
 
 async def cleanup_database():
     """Cleanup database connection"""

@@ -1,6 +1,7 @@
 """
 WebSocket server for real-time updates using FastAPI and WebSockets.
 """
+
 import logging
 import os
 from typing import List
@@ -30,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -55,8 +57,10 @@ class ConnectionManager:
                 except Exception:
                     pass
 
+
 # Global manager instance
 manager = ConnectionManager()
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -70,13 +74,14 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
         logger.info("WebSocket client disconnected")
 
+
 # Function to broadcast data to all clients
 async def broadcast_to_clients(data: str):
     await manager.send_message(data)
 
+
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("WEBSOCKET_PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Production-ready blockchain upgrade monitor with Redis caching, PostgreSQL database, 
+Production-ready blockchain upgrade monitor with Redis caching, PostgreSQL database,
 real-time WebSocket updates, and comprehensive monitoring.
 """
+
 import asyncio
 import logging
 import os
@@ -17,7 +18,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 # Import existing UI components
 from config.config import Config
@@ -30,11 +31,8 @@ from src.ui.theme import apply_theme, create_animated_title, create_theme_toggle
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('production_blockchain_monitor.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("production_blockchain_monitor.log"), logging.StreamHandler(sys.stdout)],
 )
 
 logger = logging.getLogger(__name__)
@@ -51,20 +49,23 @@ try:
     )
     from src.services.realtime_service import start_realtime_service, stop_realtime_service
     from src.services.websocket_server import app as websocket_app
+
     SERVICES_AVAILABLE = True
 except ImportError as e:
     logger.error(f"Services not available: {e}")
     SERVICES_AVAILABLE = False
+
 
 def is_port_available(port):
     """Check if a port is available for use"""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(1)
-            result = sock.connect_ex(('localhost', port))
+            result = sock.connect_ex(("localhost", port))
             return result != 0
     except:
         return False
+
 
 def find_available_port(start_port, max_attempts=10):
     """Find an available port starting from start_port"""
@@ -73,6 +74,7 @@ def find_available_port(start_port, max_attempts=10):
         if is_port_available(port):
             return port
     return None
+
 
 # Fallback functions for when services are not available
 def get_fallback_health_status():
@@ -84,31 +86,33 @@ def get_fallback_health_status():
                 "status": "unhealthy",
                 "response_time": 0.0,
                 "last_check": datetime.now().isoformat(),
-                "details": {"error": "Database not connected"}
+                "details": {"error": "Database not connected"},
             },
             "redis": {
                 "status": "degraded",
                 "response_time": 0.0,
                 "last_check": datetime.now().isoformat(),
-                "details": {"status": "not available"}
+                "details": {"status": "not available"},
             },
             "monitoring": {
                 "status": "degraded",
                 "response_time": 0.0,
                 "last_check": datetime.now().isoformat(),
-                "details": {"error": "Service not fully initialized"}
-            }
+                "details": {"error": "Service not fully initialized"},
+            },
         },
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+
 
 def get_fallback_metrics_summary():
     """Get basic metrics when monitoring service is not available"""
     try:
         import psutil
+
         cpu_percent = psutil.cpu_percent(interval=1)
         memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
+        disk = psutil.disk_usage("/")
 
         return {
             "current": {
@@ -116,27 +120,21 @@ def get_fallback_metrics_summary():
                 "memory_percent": memory.percent,
                 "disk_percent": disk.percent,
                 "process_count": len(psutil.pids()),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             },
-            "averages_1h": {
-                "cpu_percent": cpu_percent,
-                "memory_percent": memory.percent,
-                "disk_percent": disk.percent
-            },
+            "averages_1h": {"cpu_percent": cpu_percent, "memory_percent": memory.percent, "disk_percent": disk.percent},
             "thresholds": {
                 "cpu_percent": 80.0,
                 "memory_percent": 85.0,
                 "disk_percent": 90.0,
                 "response_time": 5.0,
-                "error_rate": 0.05
-            }
+                "error_rate": 0.05,
+            },
         }
     except Exception as e:
         logger.error(f"Error getting fallback metrics: {e}")
-        return {
-            "error": "No metrics available",
-            "timestamp": datetime.now().isoformat()
-        }
+        return {"error": "No metrics available", "timestamp": datetime.now().isoformat()}
+
 
 # FastAPI app for health checks and metrics
 if SERVICES_AVAILABLE:
@@ -177,13 +175,14 @@ if SERVICES_AVAILABLE:
             info = cache_service.redis_client.info()
             return {
                 "status": "operational",
-                "memory_usage": info.get('used_memory_human', 'N/A'),
-                "connections": info.get('connected_clients', 'N/A'),
-                "hits": info.get('keyspace_hits', 'N/A'),
-                "misses": info.get('keyspace_misses', 'N/A')
+                "memory_usage": info.get("used_memory_human", "N/A"),
+                "connections": info.get("connected_clients", "N/A"),
+                "hits": info.get("keyspace_hits", "N/A"),
+                "misses": info.get("keyspace_misses", "N/A"),
             }
         except Exception as e:
             return {"status": "error", "message": str(e)}
+
 
 class ProductionApplication:
     def __init__(self):
@@ -209,11 +208,7 @@ class ProductionApplication:
             logger.info("Database initialized")
 
             # Start background services
-            await asyncio.gather(
-                start_realtime_service(),
-                start_monitoring_service(),
-                return_exceptions=True
-            )
+            await asyncio.gather(start_realtime_service(), start_monitoring_service(), return_exceptions=True)
 
             self.services_running = True
             logger.info("All services started successfully")
@@ -231,11 +226,7 @@ class ProductionApplication:
 
         try:
             # Stop background services
-            await asyncio.gather(
-                stop_realtime_service(),
-                stop_monitoring_service(),
-                return_exceptions=True
-            )
+            await asyncio.gather(stop_realtime_service(), stop_monitoring_service(), return_exceptions=True)
 
             # Cleanup database
             await cleanup_database()
@@ -296,8 +287,10 @@ class ProductionApplication:
         self.health_server.start()
         logger.info("Health check server thread started")
 
+
 # Global application instance
 app = ProductionApplication()
+
 
 def initialize_production_app():
     """Initialize the production application"""
@@ -317,9 +310,11 @@ def initialize_production_app():
 
     logger.info("Production application initialized")
 
+
 def cleanup_production_app():
     """Cleanup the production application"""
     if SERVICES_AVAILABLE:
+
         def cleanup_services_thread():
             try:
                 asyncio.run(app.stop_services())
@@ -330,13 +325,14 @@ def cleanup_production_app():
 
     logger.info("Production application cleanup completed")
 
+
 def create_production_ui():
     """Create production UI with enhanced monitoring"""
     st.set_page_config(
         page_title="Blockchain Protocol Upgrade Monitor - Production",
         page_icon="🔗",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="expanded",
     )
 
     # Validate configuration
@@ -345,7 +341,7 @@ def create_production_ui():
         st.stop()
 
     # Initialize production services on first run
-    if 'production_initialized' not in st.session_state:
+    if "production_initialized" not in st.session_state:
         initialize_production_app()
         st.session_state.production_initialized = True
 
@@ -431,14 +427,24 @@ def create_production_ui():
     st.sidebar.title("🔗 Production Monitor")
     page = st.sidebar.selectbox(
         "Navigation",
-        ["📊 Dashboard", "📊 Upgrade Timeline", "📈 Risk Dashboard", "📊 Analytics", "🎯 Execution Guidance", "🏥 Health Status", "📈 Metrics", "🗄️ Database", "⚙️ Settings"]
+        [
+            "📊 Dashboard",
+            "📊 Upgrade Timeline",
+            "📈 Risk Dashboard",
+            "📊 Analytics",
+            "🎯 Execution Guidance",
+            "🏥 Health Status",
+            "📈 Metrics",
+            "🗄️ Database",
+            "⚙️ Settings",
+        ],
     )
 
     if page == "📊 Dashboard":
         st.header("📊 Real-time Production Dashboard")
         create_animated_title(
             "Blockchain Protocol Upgrade Monitor - Production",
-            "Real-time monitoring with Redis caching, PostgreSQL storage, and WebSocket updates."
+            "Real-time monitoring with Redis caching, PostgreSQL storage, and WebSocket updates.",
         )
 
         # WebSocket connection info
@@ -515,11 +521,11 @@ def create_production_ui():
             st.subheader("⚠️ Recent Risk Events")
 
             risk_events = {
-                'Time': ['2024-01-15 10:30', '2024-01-15 09:15', '2024-01-15 08:45', '2024-01-15 07:20'],
-                'Protocol': ['Ethereum', 'Uniswap', 'Aave', 'Compound'],
-                'Event Type': ['High Volatility', 'Liquidity Drop', 'Governance Alert', 'Oracle Issue'],
-                'Risk Score': [85.2, 72.1, 68.5, 61.3],
-                'Status': ['Active', 'Resolved', 'Monitoring', 'Resolved']
+                "Time": ["2024-01-15 10:30", "2024-01-15 09:15", "2024-01-15 08:45", "2024-01-15 07:20"],
+                "Protocol": ["Ethereum", "Uniswap", "Aave", "Compound"],
+                "Event Type": ["High Volatility", "Liquidity Drop", "Governance Alert", "Oracle Issue"],
+                "Risk Score": [85.2, 72.1, 68.5, 61.3],
+                "Status": ["Active", "Resolved", "Monitoring", "Resolved"],
             }
 
             st.dataframe(risk_events, use_container_width=True)
@@ -691,11 +697,11 @@ def create_production_ui():
                 st.subheader("📈 Protocol Statistics (Last 30 Days)")
 
                 protocol_data = {
-                    'Protocol': ['Ethereum', 'Uniswap', 'Aave', 'Compound', 'Polygon'],
-                    'Risk Events': [45, 32, 28, 19, 15],
-                    'Avg Risk Score': [68.5, 45.2, 52.8, 38.9, 41.2],
-                    'Price Updates': [8934, 7245, 6832, 5921, 4567],
-                    'Sentiment Score': [0.65, 0.78, 0.72, 0.81, 0.69]
+                    "Protocol": ["Ethereum", "Uniswap", "Aave", "Compound", "Polygon"],
+                    "Risk Events": [45, 32, 28, 19, 15],
+                    "Avg Risk Score": [68.5, 45.2, 52.8, 38.9, 41.2],
+                    "Price Updates": [8934, 7245, 6832, 5921, 4567],
+                    "Sentiment Score": [0.65, 0.78, 0.72, 0.81, 0.69],
                 }
 
                 st.dataframe(protocol_data, use_container_width=True)
@@ -746,15 +752,17 @@ def create_production_ui():
         st.subheader("🔧 Production Configuration")
 
         # Display current configuration
-        st.json({
-            "services_available": SERVICES_AVAILABLE,
-            "websocket_port": int(os.getenv("WEBSOCKET_PORT", 8000)),
-            "health_port": int(os.getenv("HEALTH_PORT", 8001)),
-            "database_url": os.getenv("DATABASE_URL", "postgresql://..."),
-            "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-            "cache_ttl": 300,
-            "update_interval": 30
-        })
+        st.json(
+            {
+                "services_available": SERVICES_AVAILABLE,
+                "websocket_port": int(os.getenv("WEBSOCKET_PORT", 8000)),
+                "health_port": int(os.getenv("HEALTH_PORT", 8001)),
+                "database_url": os.getenv("DATABASE_URL", "postgresql://..."),
+                "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+                "cache_ttl": 300,
+                "update_interval": 30,
+            }
+        )
 
         # Service control
         st.subheader("🎛️ Service Control")
@@ -837,9 +845,10 @@ def create_production_ui():
             st.success("Configuration saved successfully!")
             st.info("Changes will take effect after service restart")
 
+
 if __name__ == "__main__":
     # Check if running in Streamlit
-    if 'streamlit' in sys.modules:
+    if "streamlit" in sys.modules:
         create_production_ui()
     else:
         # Run standalone

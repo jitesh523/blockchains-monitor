@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 SNAPSHOT_GRAPHQL_ENDPOINT = "https://hub.snapshot.org/graphql"
 TALLY_API_ENDPOINT = "https://api.tally.xyz/v1"
 
+
 class GovernanceClient:
     """Client for interacting with governance platforms like Snapshot and Tally."""
 
@@ -30,7 +31,7 @@ class GovernanceClient:
                 }
             }
             """,
-            "variables": {"space": space}
+            "variables": {"space": space},
         }
 
         # Use explicit timeout and exponential backoff
@@ -42,8 +43,8 @@ class GovernanceClient:
                     data = response.json()
                     return data.get("data", {}).get("proposals", [])
                 except (httpx.HTTPStatusError, httpx.RequestError) as e:
-                    logger.warning(f"Snapshot API error (attempt {attempt+1}/3): {e}")
-                    await asyncio.sleep(2 ** attempt)
+                    logger.warning(f"Snapshot API error (attempt {attempt + 1}/3): {e}")
+                    await asyncio.sleep(2**attempt)
         return []
 
     async def fetch_tally_proposals(self, organization: str) -> List[Dict[str, Any]]:
@@ -63,8 +64,8 @@ class GovernanceClient:
                     response.raise_for_status()
                     return response.json().get("data", [])
                 except (httpx.HTTPStatusError, httpx.RequestError) as e:
-                    logger.warning(f"Tally API error (attempt {attempt+1}/3): {e}")
-                    await asyncio.sleep(2 ** attempt)
+                    logger.warning(f"Tally API error (attempt {attempt + 1}/3): {e}")
+                    await asyncio.sleep(2**attempt)
         return []
 
     def normalize_snapshot_proposal(self, proposal: Dict[str, Any]) -> Dict[str, Any]:
@@ -73,7 +74,7 @@ class GovernanceClient:
             "title": proposal.get("title", "Unknown"),
             "status": proposal.get("state", "Unknown"),
             "created": datetime.fromtimestamp(proposal.get("start", 0)),
-            "votes": proposal.get("scores_total", 0)
+            "votes": proposal.get("scores_total", 0),
         }
 
     def normalize_tally_proposal(self, proposal: Dict[str, Any]) -> Dict[str, Any]:
@@ -89,7 +90,7 @@ class GovernanceClient:
             "title": proposal.get("title", "Unknown"),
             "status": proposal.get("status", "Unknown"),
             "created": created_dt,
-            "votes": proposal.get("totalVotes", 0)
+            "votes": proposal.get("totalVotes", 0),
         }
 
     async def log_latest_proposals(self, space: str, organization: str):
@@ -97,10 +98,9 @@ class GovernanceClient:
         snapshot_proposals = await self.fetch_snapshot_proposals(space)
         tally_proposals = await self.fetch_tally_proposals(organization)
 
-        all_proposals = (
-            [self.normalize_snapshot_proposal(p) for p in snapshot_proposals] +
-            [self.normalize_tally_proposal(p) for p in tally_proposals]
-        )
+        all_proposals = [self.normalize_snapshot_proposal(p) for p in snapshot_proposals] + [
+            self.normalize_tally_proposal(p) for p in tally_proposals
+        ]
 
         for proposal in all_proposals:
             logger.info(

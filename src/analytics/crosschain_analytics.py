@@ -6,6 +6,7 @@ Given a list of events from multiple chains for the same or different upgrades,
 this module clusters potentially related events within a time window and
 returns a compact correlation summary with a confidence score.
 """
+
 from __future__ import annotations
 
 import logging
@@ -20,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CorrelatedCluster:
     """Represents a cluster of related events across chains."""
+
     upgrade: str
     chains: List[str]
     count: int
@@ -106,9 +108,7 @@ def correlate_events(
         def flush_bucket():
             if not bucket:
                 return
-            ts_list = [
-                _parse_timestamp(b.get("timestamp")) for b in bucket if _parse_timestamp(b.get("timestamp"))
-            ]
+            ts_list = [_parse_timestamp(b.get("timestamp")) for b in bucket if _parse_timestamp(b.get("timestamp"))]
             start_ts = min(ts_list) if ts_list else None
             end_ts = max(ts_list) if ts_list else None
             spread = (end_ts - start_ts).total_seconds() if start_ts and end_ts else None
@@ -188,4 +188,3 @@ if __name__ == "__main__":
         {"upgrade": "GMX2", "chain": "Arbitrum", "timestamp": now + timedelta(minutes=3)},
     ]
     print(correlate_events(sample, window_minutes=60))
-

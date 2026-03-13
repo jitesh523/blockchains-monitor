@@ -8,7 +8,7 @@ import os
 import sys
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from src.models.volatility_model import get_protocol_volatility
 
@@ -19,7 +19,7 @@ async def test_volatility_model():
     print("=" * 50)
 
     # Test protocols
-    protocols = ['ethereum', 'uniswap', 'aave']
+    protocols = ["ethereum", "uniswap", "aave"]
 
     for protocol in protocols:
         print(f"\nTesting {protocol}...")
@@ -28,7 +28,7 @@ async def test_volatility_model():
             # Get volatility data
             vol_data = await get_protocol_volatility(protocol, days=90, horizon=3)
 
-            if 'error' in vol_data:
+            if "error" in vol_data:
                 print(f"❌ Error for {protocol}: {vol_data['error']}")
             else:
                 print(f"✅ {protocol.upper()} Results:")
@@ -40,6 +40,7 @@ async def test_volatility_model():
 
         except Exception as e:
             print(f"❌ Exception for {protocol}: {e}")
+
 
 if __name__ == "__main__":
     asyncio.run(test_volatility_model())

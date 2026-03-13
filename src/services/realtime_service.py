@@ -1,6 +1,7 @@
 """
 Real-time data broadcaster service that sends updates via WebSocket.
 """
+
 import asyncio
 import json
 import logging
@@ -15,6 +16,7 @@ from src.services.websocket_server import broadcast_to_clients
 
 logger = logging.getLogger(__name__)
 
+
 class RealtimeService:
     def __init__(self):
         self.is_running = False
@@ -27,10 +29,7 @@ class RealtimeService:
 
         # Start background tasks
         await asyncio.gather(
-            self.price_update_loop(),
-            self.sentiment_update_loop(),
-            self.risk_assessment_loop(),
-            self.broadcast_loop()
+            self.price_update_loop(), self.sentiment_update_loop(), self.risk_assessment_loop(), self.broadcast_loop()
         )
 
     async def stop(self):
@@ -54,9 +53,9 @@ class RealtimeService:
                         "ids": token,
                         "vs_currencies": "usd",
                         "include_24hr_vol": "true",
-                        "include_market_cap": "true"
+                        "include_market_cap": "true",
                     },
-                    timeout=10
+                    timeout=10,
                 )
                 response.raise_for_status()
                 data = response.json()
@@ -66,7 +65,7 @@ class RealtimeService:
                         "price": data[token]["usd"],
                         "volume_24h": data[token].get("usd_24h_vol", 0),
                         "market_cap": data[token].get("usd_market_cap", 0),
-                        "timestamp": datetime.now().isoformat()
+                        "timestamp": datetime.now().isoformat(),
                     }
 
                     # Store in database
@@ -75,7 +74,7 @@ class RealtimeService:
                         price=data[token]["usd"],
                         volume_24h=data[token].get("usd_24h_vol", 0),
                         market_cap=data[token].get("usd_market_cap", 0),
-                        timestamp=datetime.now()
+                        timestamp=datetime.now(),
                     )
                     await db_service.insert_price_data(price_data)
 
@@ -92,18 +91,10 @@ class RealtimeService:
         sentiment_data = {
             "overall_sentiment": random.uniform(-1, 1),
             "sentiment_sources": [
-                {
-                    "source": "twitter",
-                    "sentiment": random.uniform(-1, 1),
-                    "volume": random.randint(100, 1000)
-                },
-                {
-                    "source": "reddit",
-                    "sentiment": random.uniform(-1, 1),
-                    "volume": random.randint(50, 500)
-                }
+                {"source": "twitter", "sentiment": random.uniform(-1, 1), "volume": random.randint(100, 1000)},
+                {"source": "reddit", "sentiment": random.uniform(-1, 1), "volume": random.randint(50, 500)},
             ],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         # Store in database
@@ -112,7 +103,7 @@ class RealtimeService:
             content="Real-time sentiment analysis",
             sentiment_score=sentiment_data["overall_sentiment"],
             timestamp=datetime.now(),
-            metadata={"sources": sentiment_data["sentiment_sources"]}
+            metadata={"sources": sentiment_data["sentiment_sources"]},
         )
         await db_service.insert_sentiment_data(sentiment_obj)
 
@@ -135,9 +126,9 @@ class RealtimeService:
                 "factors": [
                     {"factor": "volatility", "impact": random.uniform(0, 1)},
                     {"factor": "sentiment", "impact": random.uniform(0, 1)},
-                    {"factor": "liquidity", "impact": random.uniform(0, 1)}
+                    {"factor": "liquidity", "impact": random.uniform(0, 1)},
                 ],
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
 
             # Store high-risk events in database
@@ -148,7 +139,7 @@ class RealtimeService:
                     risk_score=risk_score,
                     description=f"High risk detected for {protocol}",
                     timestamp=datetime.now(),
-                    metadata={"factors": risk_data[protocol]["factors"]}
+                    metadata={"factors": risk_data[protocol]["factors"]},
                 )
                 await db_service.insert_risk_event(risk_event)
 
@@ -159,10 +150,7 @@ class RealtimeService:
         while self.is_running:
             try:
                 prices = await self.fetch_latest_prices()
-                await broadcast_to_clients(json.dumps({
-                    "type": "price_update",
-                    "data": prices
-                }))
+                await broadcast_to_clients(json.dumps({"type": "price_update", "data": prices}))
                 logger.info("Price data broadcasted")
             except Exception as e:
                 logger.error(f"Error in price update loop: {e}")
@@ -174,10 +162,7 @@ class RealtimeService:
         while self.is_running:
             try:
                 sentiment = await self.generate_sentiment_data()
-                await broadcast_to_clients(json.dumps({
-                    "type": "sentiment_update",
-                    "data": sentiment
-                }))
+                await broadcast_to_clients(json.dumps({"type": "sentiment_update", "data": sentiment}))
                 logger.info("Sentiment data broadcasted")
             except Exception as e:
                 logger.error(f"Error in sentiment update loop: {e}")
@@ -189,10 +174,7 @@ class RealtimeService:
         while self.is_running:
             try:
                 risk_data = await self.assess_risk_levels()
-                await broadcast_to_clients(json.dumps({
-                    "type": "risk_update",
-                    "data": risk_data
-                }))
+                await broadcast_to_clients(json.dumps({"type": "risk_update", "data": risk_data}))
                 logger.info("Risk assessment data broadcasted")
             except Exception as e:
                 logger.error(f"Error in risk assessment loop: {e}")
@@ -206,26 +188,29 @@ class RealtimeService:
                 # Get aggregated stats from database
                 stats = await db_service.get_protocol_stats()
 
-                await broadcast_to_clients(json.dumps({
-                    "type": "system_status",
-                    "data": {
-                        "status": "operational",
-                        "timestamp": datetime.now().isoformat(),
-                        "stats": stats
-                    }
-                }))
+                await broadcast_to_clients(
+                    json.dumps(
+                        {
+                            "type": "system_status",
+                            "data": {"status": "operational", "timestamp": datetime.now().isoformat(), "stats": stats},
+                        }
+                    )
+                )
                 logger.info("System status broadcasted")
             except Exception as e:
                 logger.error(f"Error in broadcast loop: {e}")
 
             await asyncio.sleep(self.update_interval * 4)  # Update every 2 minutes
 
+
 # Global real-time service instance
 realtime_service = RealtimeService()
+
 
 async def start_realtime_service():
     """Start the real-time service"""
     await realtime_service.start()
+
 
 async def stop_realtime_service():
     """Stop the real-time service"""

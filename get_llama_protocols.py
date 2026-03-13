@@ -2,6 +2,7 @@
 get_llama_protocols.py
 Fetch and print protocol slugs from DeFi Llama for diagnostic use.
 """
+
 import requests
 
 
@@ -13,6 +14,6 @@ def main():
     for p in protocols:
         print(f"{p['name']} : {p['slug']}")
 
+
 if __name__ == "__main__":
     main()
-

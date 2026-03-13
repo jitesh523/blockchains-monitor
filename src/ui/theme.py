@@ -5,7 +5,7 @@ from typing import Any, Dict
 import streamlit as st
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     from src.utils.contrast_check import calculate_contrast_ratio, check_contrast
@@ -13,105 +13,153 @@ except ImportError:
     # Fallback for missing contrast check
     def check_contrast(hex1: str, hex2: str, min_ratio: float = 4.5) -> bool:
         return True
+
     def calculate_contrast_ratio(hex1: str, hex2: str) -> float:
         return 5.0
 
+
 # Color palette for dark theme
 DARK_THEME = {
-    'primary': '#00D4FF',
-    'secondary': '#FF6B6B',
-    'success': '#51CF66',
-    'warning': '#FFD43B',
-    'error': '#FF5252',
-    'background': '#0E1117',
-    'surface': '#1E2329',
-    'card': '#262D3A',
-    'text_primary': '#FAFAFA',
-    'text_secondary': '#B0B3B8',
-    'border': '#2D3748',
-    'hover': '#2A3441',
-    'accent_glow': 'rgba(0, 255, 255, 0.2)'
+    "primary": "#00D4FF",
+    "secondary": "#FF6B6B",
+    "success": "#51CF66",
+    "warning": "#FFD43B",
+    "error": "#FF5252",
+    "background": "#0E1117",
+    "surface": "#1E2329",
+    "card": "#262D3A",
+    "text_primary": "#FAFAFA",
+    "text_secondary": "#B0B3B8",
+    "border": "#2D3748",
+    "hover": "#2A3441",
+    "accent_glow": "rgba(0, 255, 255, 0.2)",
 }
 
 # Color palette for light theme
 LIGHT_THEME = {
-    'primary': '#0066CC',
-    'secondary': '#FF4444',
-    'success': '#28A745',
-    'warning': '#D97706',  # Changed from #FFC107 to darker orange for better contrast
-    'error': '#DC3545',
-    'background': '#FFFFFF',
-    'surface': '#F8F9FA',
-    'card': '#FFFFFF',
-    'text_primary': '#212529',
-    'text_secondary': '#6C757D',
-    'border': '#E9ECEF',
-    'hover': '#F8F9FA',
-    'accent_glow': 'rgba(255, 255, 255, 0.4)'
+    "primary": "#0066CC",
+    "secondary": "#FF4444",
+    "success": "#28A745",
+    "warning": "#D97706",  # Changed from #FFC107 to darker orange for better contrast
+    "error": "#DC3545",
+    "background": "#FFFFFF",
+    "surface": "#F8F9FA",
+    "card": "#FFFFFF",
+    "text_primary": "#212529",
+    "text_secondary": "#6C757D",
+    "border": "#E9ECEF",
+    "hover": "#F8F9FA",
+    "accent_glow": "rgba(255, 255, 255, 0.4)",
 }
+
 
 def get_theme_colors(dark_mode: bool = True) -> Dict[str, str]:
     """Get theme colors based on mode."""
     return DARK_THEME if dark_mode else LIGHT_THEME
 
+
 def get_theme_audit_results(dark_mode: bool = True) -> Dict[str, Any]:
     """Audit theme colors for WCAG compliance."""
     theme = get_theme_colors(dark_mode)
-    audit_results = {
-        'theme_mode': 'dark' if dark_mode else 'light',
-        'passed': [],
-        'failed': [],
-        'warnings': []
-    }
+    audit_results = {"theme_mode": "dark" if dark_mode else "light", "passed": [], "failed": [], "warnings": []}
 
     # Check text-on-background contrast
-    text_bg_ratio = calculate_contrast_ratio(theme['text_primary'], theme['background'])
+    text_bg_ratio = calculate_contrast_ratio(theme["text_primary"], theme["background"])
     if text_bg_ratio >= 4.5:
-        audit_results['passed'].append(f"Primary text on background: {text_bg_ratio:.2f}:1")
+        audit_results["passed"].append(f"Primary text on background: {text_bg_ratio:.2f}:1")
     else:
-        audit_results['failed'].append(f"Primary text on background: {text_bg_ratio:.2f}:1 (needs 4.5:1)")
+        audit_results["failed"].append(f"Primary text on background: {text_bg_ratio:.2f}:1 (needs 4.5:1)")
 
     # Check secondary text contrast
-    sec_text_bg_ratio = calculate_contrast_ratio(theme['text_secondary'], theme['background'])
+    sec_text_bg_ratio = calculate_contrast_ratio(theme["text_secondary"], theme["background"])
     if sec_text_bg_ratio >= 4.5:
-        audit_results['passed'].append(f"Secondary text on background: {sec_text_bg_ratio:.2f}:1")
+        audit_results["passed"].append(f"Secondary text on background: {sec_text_bg_ratio:.2f}:1")
     else:
-        audit_results['failed'].append(f"Secondary text on background: {sec_text_bg_ratio:.2f}:1 (needs 4.5:1)")
+        audit_results["failed"].append(f"Secondary text on background: {sec_text_bg_ratio:.2f}:1 (needs 4.5:1)")
 
     # Check card contrast
-    card_text_ratio = calculate_contrast_ratio(theme['text_primary'], theme['card'])
+    card_text_ratio = calculate_contrast_ratio(theme["text_primary"], theme["card"])
     if card_text_ratio >= 4.5:
-        audit_results['passed'].append(f"Text on card: {card_text_ratio:.2f}:1")
+        audit_results["passed"].append(f"Text on card: {card_text_ratio:.2f}:1")
     else:
-        audit_results['failed'].append(f"Text on card: {card_text_ratio:.2f}:1 (needs 4.5:1)")
+        audit_results["failed"].append(f"Text on card: {card_text_ratio:.2f}:1 (needs 4.5:1)")
 
     # Check warning colors
-    warning_ratio = calculate_contrast_ratio(theme['warning'], theme['background'])
+    warning_ratio = calculate_contrast_ratio(theme["warning"], theme["background"])
     if warning_ratio >= 3.0:  # Lower threshold for non-text elements
-        audit_results['passed'].append(f"Warning color: {warning_ratio:.2f}:1")
+        audit_results["passed"].append(f"Warning color: {warning_ratio:.2f}:1")
     else:
-        audit_results['warnings'].append(f"Warning color: {warning_ratio:.2f}:1 (consider improving)")
+        audit_results["warnings"].append(f"Warning color: {warning_ratio:.2f}:1 (consider improving)")
 
     return audit_results
+
 
 def inject_custom_css(dark_mode: bool = True):
     """Inject custom CSS for modern UI styling with proper theme switching."""
     theme = get_theme_colors(dark_mode)
-    mode_class = 'dark-mode' if dark_mode else 'light-mode'
+    mode_class = "dark-mode" if dark_mode else "light-mode"
 
     # Pre-calculate conditional values
-    proposal_card_shadow = 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);' if not dark_mode else 'box-shadow: 0 2px 8px rgba(0, 212, 255, 0.08), 0 1px 3px rgba(0, 212, 255, 0.04);'
-    proposal_card_hover_shadow = 'box-shadow: 0 20px 40px rgba(0, 102, 204, 0.12), 0 8px 16px rgba(0, 102, 204, 0.08), 0 0 0 1px rgba(0, 102, 204, 0.1);' if not dark_mode else 'box-shadow: 0 20px 40px rgba(0, 212, 255, 0.15), 0 8px 16px rgba(0, 212, 255, 0.1), 0 0 0 1px rgba(0, 212, 255, 0.2);'
-    metric_card_shadow = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);' if not dark_mode else 'box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05), 0 1px 2px rgba(0, 212, 255, 0.03);'
-    metric_card_hover_shadow = 'box-shadow: 0 8px 25px rgba(0, 102, 204, 0.15), 0 4px 10px rgba(0, 102, 204, 0.1);' if not dark_mode else 'box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2), 0 4px 10px rgba(0, 212, 255, 0.15);'
-    network_status_shadow = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);' if not dark_mode else 'box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);'
-    network_status_hover_shadow = 'box-shadow: 0 6px 20px rgba(0, 102, 204, 0.12), 0 2px 8px rgba(0, 102, 204, 0.08);' if not dark_mode else 'box-shadow: 0 6px 20px rgba(0, 212, 255, 0.15), 0 2px 8px rgba(0, 212, 255, 0.1);'
-    selectbox_shadow = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);' if not dark_mode else 'box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);'
-    selectbox_hover_shadow = 'box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1), 0 4px 12px rgba(0, 102, 204, 0.08);' if not dark_mode else 'box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1), 0 4px 12px rgba(0, 212, 255, 0.08);'
-    selectbox_focus_shadow = 'box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15), 0 6px 20px rgba(0, 102, 204, 0.12);' if not dark_mode else 'box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), 0 6px 20px rgba(0, 212, 255, 0.12);'
-    expander_shadow = 'box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);' if not dark_mode else 'box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);'
-    expander_hover_shadow = 'box-shadow: 0 4px 15px rgba(0, 102, 204, 0.12), 0 2px 6px rgba(0, 102, 204, 0.08);' if not dark_mode else 'box-shadow: 0 4px 15px rgba(0, 212, 255, 0.15), 0 2px 6px rgba(0, 212, 255, 0.1);'
-    risk_indicator_shadow = 'box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);' if not dark_mode else 'box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);'
+    proposal_card_shadow = (
+        "box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 2px 8px rgba(0, 212, 255, 0.08), 0 1px 3px rgba(0, 212, 255, 0.04);"
+    )
+    proposal_card_hover_shadow = (
+        "box-shadow: 0 20px 40px rgba(0, 102, 204, 0.12), 0 8px 16px rgba(0, 102, 204, 0.08), 0 0 0 1px rgba(0, 102, 204, 0.1);"
+        if not dark_mode
+        else "box-shadow: 0 20px 40px rgba(0, 212, 255, 0.15), 0 8px 16px rgba(0, 212, 255, 0.1), 0 0 0 1px rgba(0, 212, 255, 0.2);"
+    )
+    metric_card_shadow = (
+        "box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);"
+        if not dark_mode
+        else "box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05), 0 1px 2px rgba(0, 212, 255, 0.03);"
+    )
+    metric_card_hover_shadow = (
+        "box-shadow: 0 8px 25px rgba(0, 102, 204, 0.15), 0 4px 10px rgba(0, 102, 204, 0.1);"
+        if not dark_mode
+        else "box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2), 0 4px 10px rgba(0, 212, 255, 0.15);"
+    )
+    network_status_shadow = (
+        "box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);"
+    )
+    network_status_hover_shadow = (
+        "box-shadow: 0 6px 20px rgba(0, 102, 204, 0.12), 0 2px 8px rgba(0, 102, 204, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 6px 20px rgba(0, 212, 255, 0.15), 0 2px 8px rgba(0, 212, 255, 0.1);"
+    )
+    selectbox_shadow = (
+        "box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);"
+    )
+    selectbox_hover_shadow = (
+        "box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1), 0 4px 12px rgba(0, 102, 204, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1), 0 4px 12px rgba(0, 212, 255, 0.08);"
+    )
+    selectbox_focus_shadow = (
+        "box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15), 0 6px 20px rgba(0, 102, 204, 0.12);"
+        if not dark_mode
+        else "box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), 0 6px 20px rgba(0, 212, 255, 0.12);"
+    )
+    expander_shadow = (
+        "box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 1px 3px rgba(0, 212, 255, 0.05);"
+    )
+    expander_hover_shadow = (
+        "box-shadow: 0 4px 15px rgba(0, 102, 204, 0.12), 0 2px 6px rgba(0, 102, 204, 0.08);"
+        if not dark_mode
+        else "box-shadow: 0 4px 15px rgba(0, 212, 255, 0.15), 0 2px 6px rgba(0, 212, 255, 0.1);"
+    )
+    risk_indicator_shadow = (
+        "box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);"
+        if not dark_mode
+        else "box-shadow: 0 4px 12px rgba(0, 212, 255, 0.1);"
+    )
 
     css = f"""
     <style>
@@ -120,19 +168,19 @@ def inject_custom_css(dark_mode: bool = True):
     
     /* Root variables - Dynamic theme switching */
     :root {{
-        --primary-color: {theme['primary']};
-        --secondary-color: {theme['secondary']};
-        --success-color: {theme['success']};
-        --warning-color: {theme['warning']};
-        --error-color: {theme['error']};
-        --background-color: {theme['background']};
-        --surface-color: {theme['surface']};
-        --card-color: {theme['card']};
-        --text-primary: {theme['text_primary']};
-        --text-secondary: {theme['text_secondary']};
-        --border-color: {theme['border']};
-        --hover-color: {theme['hover']};
-        --accent-glow: {theme['accent_glow']};
+        --primary-color: {theme["primary"]};
+        --secondary-color: {theme["secondary"]};
+        --success-color: {theme["success"]};
+        --warning-color: {theme["warning"]};
+        --error-color: {theme["error"]};
+        --background-color: {theme["background"]};
+        --surface-color: {theme["surface"]};
+        --card-color: {theme["card"]};
+        --text-primary: {theme["text_primary"]};
+        --text-secondary: {theme["text_secondary"]};
+        --border-color: {theme["border"]};
+        --hover-color: {theme["hover"]};
+        --accent-glow: {theme["accent_glow"]};
     }}
     
     /* Fallback for prefers-color-scheme */
@@ -708,6 +756,7 @@ def inject_custom_css(dark_mode: bool = True):
 
     st.markdown(css, unsafe_allow_html=True)
 
+
 def create_animated_title(title: str, subtitle: str = None):
     """Create an animated title with gradient effect."""
     import html as html_module
@@ -728,26 +777,28 @@ def create_animated_title(title: str, subtitle: str = None):
 
     st.markdown(html, unsafe_allow_html=True)
 
+
 def create_proposal_card(proposal: Dict[str, Any], metrics: Dict[str, Any]):
     """Create a modern proposal card with hover effects and robust metric display."""
     import math
+
     status_class = f"status-{proposal.get('status', 'pending').lower()}"
 
     # Robust metrics fallback
-    vol_raw = metrics.get('volatility', 'N/A')
-    sentiment_raw = metrics.get('sentiment', 'N/A')
-    risk_score_raw = metrics.get('risk_score', 'N/A')
+    vol_raw = metrics.get("volatility", "N/A")
+    sentiment_raw = metrics.get("sentiment", "N/A")
+    risk_score_raw = metrics.get("risk_score", "N/A")
 
     # Handle NaN or None or inf for numbers
     def nice(val):
         try:
             if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
-                return '--'
+                return "--"
             # Also cover string case
-            if isinstance(val, str) and (val.lower() == 'nan' or val.lower() == 'inf'):
-                return '--'
+            if isinstance(val, str) and (val.lower() == "nan" or val.lower() == "inf"):
+                return "--"
         except Exception:
-            return '--'
+            return "--"
         return val
 
     volatility = nice(vol_raw)
@@ -756,11 +807,11 @@ def create_proposal_card(proposal: Dict[str, Any], metrics: Dict[str, Any]):
 
     html = f"""
     <div class="proposal-card fade-in">
-        <div class="proposal-title" title="{proposal.get('title','Untitled Proposal')}">{proposal.get('title', 'Untitled Proposal')}</div>
-        <div class="proposal-meta" title="Date: {proposal.get('created','Unknown')} | Chain: {proposal.get('protocol','Unknown')}">
-            📅 {proposal.get('created', 'Unknown')} • ⛓️ {proposal.get('protocol', 'Unknown')}
+        <div class="proposal-title" title="{proposal.get("title", "Untitled Proposal")}">{proposal.get("title", "Untitled Proposal")}</div>
+        <div class="proposal-meta" title="Date: {proposal.get("created", "Unknown")} | Chain: {proposal.get("protocol", "Unknown")}">
+            📅 {proposal.get("created", "Unknown")} • ⛓️ {proposal.get("protocol", "Unknown")}
         </div>
-        <div class="proposal-status {status_class}">{proposal.get('status', 'pending')}</div>
+        <div class="proposal-status {status_class}">{proposal.get("status", "pending")}</div>
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="metric-value" title="{volatility}">{volatility}</div>
@@ -780,22 +831,25 @@ def create_proposal_card(proposal: Dict[str, Any], metrics: Dict[str, Any]):
 
     st.markdown(html, unsafe_allow_html=True)
 
+
 def create_network_status_card(network: str, metrics: Dict[str, Any]):
     """Create a network status card with tooltips and robust value fallback."""
     import math
+
     def nice(val):
         try:
             if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
-                return '--'
+                return "--"
             # Also cover string case
-            if isinstance(val, str) and (val.lower() == 'nan' or val.lower() == 'inf'):
-                return '--'
+            if isinstance(val, str) and (val.lower() == "nan" or val.lower() == "inf"):
+                return "--"
         except Exception:
-            return '--'
+            return "--"
         return val
-    gas = nice(metrics.get('gas_price', 'N/A'))
-    block_time = nice(metrics.get('block_time', 'N/A'))
-    tps = nice(metrics.get('tps', 'N/A'))
+
+    gas = nice(metrics.get("gas_price", "N/A"))
+    block_time = nice(metrics.get("block_time", "N/A"))
+    tps = nice(metrics.get("tps", "N/A"))
     html = f"""
     <div class="network-status slide-in-left">
         <div class="network-name" title="{network.title()}">🔗 {network.title()}</div>
@@ -814,6 +868,7 @@ def create_network_status_card(network: str, metrics: Dict[str, Any]):
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
+
 
 def create_risk_indicator(risk_score: float):
     """Create a risk indicator with color coding."""
@@ -835,6 +890,7 @@ def create_risk_indicator(risk_score: float):
 
     st.markdown(html, unsafe_allow_html=True)
 
+
 def create_loading_spinner():
     """Create a loading spinner."""
     html = """
@@ -846,10 +902,11 @@ def create_loading_spinner():
 
     st.markdown(html, unsafe_allow_html=True)
 
+
 def create_theme_toggle():
     """Create a functional theme toggle button."""
     # Initialize theme state
-    if 'dark_mode' not in st.session_state:
+    if "dark_mode" not in st.session_state:
         st.session_state.dark_mode = True
 
     # Create toggle button in sidebar
@@ -869,12 +926,13 @@ def create_theme_toggle():
 
     return st.session_state.dark_mode
 
+
 def display_theme_audit():
     """Display theme audit results in the Streamlit app."""
     st.subheader("🎨 Theme Accessibility Audit")
 
     # Get current theme
-    current_dark_mode = st.session_state.get('dark_mode', True)
+    current_dark_mode = st.session_state.get("dark_mode", True)
 
     # Display audit for current theme
     audit_results = get_theme_audit_results(current_dark_mode)
@@ -883,26 +941,26 @@ def display_theme_audit():
     st.write(f"**Current Theme: {mode_name} Mode**")
 
     # Display passed items
-    if audit_results['passed']:
+    if audit_results["passed"]:
         st.success("✅ **Passed Checks:**")
-        for item in audit_results['passed']:
+        for item in audit_results["passed"]:
             st.write(f"  • {item}")
 
     # Display failed items
-    if audit_results['failed']:
+    if audit_results["failed"]:
         st.error("❌ **Failed Checks:**")
-        for item in audit_results['failed']:
+        for item in audit_results["failed"]:
             st.write(f"  • {item}")
 
     # Display warnings
-    if audit_results['warnings']:
+    if audit_results["warnings"]:
         st.warning("⚠️ **Warnings:**")
-        for item in audit_results['warnings']:
+        for item in audit_results["warnings"]:
             st.write(f"  • {item}")
 
     # Summary
-    total_checks = len(audit_results['passed']) + len(audit_results['failed']) + len(audit_results['warnings'])
-    passed_checks = len(audit_results['passed'])
+    total_checks = len(audit_results["passed"]) + len(audit_results["failed"]) + len(audit_results["warnings"])
+    passed_checks = len(audit_results["passed"])
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -910,7 +968,11 @@ def display_theme_audit():
     with col2:
         st.metric("Passed", passed_checks, delta=passed_checks - total_checks + passed_checks)
     with col3:
-        st.metric("Failed", len(audit_results['failed']), delta=-len(audit_results['failed']) if audit_results['failed'] else 0)
+        st.metric(
+            "Failed",
+            len(audit_results["failed"]),
+            delta=-len(audit_results["failed"]) if audit_results["failed"] else 0,
+        )
 
     # Show both theme audits in expander
     with st.expander("📊 Compare Both Themes"):
@@ -930,10 +992,11 @@ def display_theme_audit():
             st.write(f"Failed: {len(light_audit['failed'])}")
             st.write(f"Warnings: {len(light_audit['warnings'])}")
 
+
 def apply_theme(dark_mode: bool = True):
     """Apply the theme to the entire application."""
     inject_custom_css(dark_mode)
 
     # Store theme preference in session state
-    if 'dark_mode' not in st.session_state:
+    if "dark_mode" not in st.session_state:
         st.session_state.dark_mode = dark_mode
