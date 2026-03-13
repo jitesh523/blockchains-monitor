@@ -2,6 +2,10 @@ import os
 import sys
 
 import pandas as pd
+from unittest.mock import MagicMock, patch
+
+import sys
+
 import plotly.graph_objects as go
 import pytest
 

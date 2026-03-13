@@ -4,7 +4,7 @@ Tests for crosschain_analytics.correlate_events().
 
 from datetime import datetime, timedelta, timezone
 
-from crosschain_analytics import correlate_events
+from src.analytics.crosschain_analytics import correlate_events
 
 
 class TestCorrelateEvents:
