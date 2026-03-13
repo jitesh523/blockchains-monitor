@@ -7,15 +7,16 @@ Refactored for testability and configuration-driven thresholding.
 """
 from __future__ import annotations
 
+import asyncio
 import datetime
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 
 from alerts import alert_user
-from liquidity_model import fetch_tvl, forecast_tvl
-from sentiment_analyzer import analyze_tweet_sentiment, get_tweets
-from volatility_model import compute_garch_volatility, fetch_eth_prices
+from src.models.liquidity_model import forecast_tvl, get_tvl_history
+from src.models.sentiment_model import analyze_sentiment, get_mock_tweets
+from src.models.volatility_model import get_protocol_volatility
 
 # Provide isolated module logger
 logger = logging.getLogger(__name__)
@@ -34,15 +35,19 @@ class PipelineConfig:
 def check_sentiment(config: PipelineConfig) -> Tuple[float, List[Any], List[Dict[str, Any]]]:
     """Fetch tweets and calculate the negative sentiment ratio."""
     try:
-        tweets = get_tweets(config.search_term, max_results=5)
-        sentiments = analyze_tweet_sentiment(tweets)
-        if not sentiments:
-            return 0.0, [], []
-
-        negatives = sum(1 for s in sentiments if s.get("label") == "NEGATIVE")
-        negative_ratio = negatives / len(sentiments)
-        logger.info("Sentiment analysis: %.1f%% negative", negative_ratio * 100)
-        return negative_ratio, tweets, sentiments
+        # In src.models, get_mock_tweets returns a list of string.
+        tweets = get_mock_tweets(config.protocol_slug)
+        sentiments = analyze_sentiment(tweets)
+        
+        # Analyze_tweet_sentiment in src.models returns a single average score from -1 to 1.
+        # So we adapt: if it's deeply negative (-1.0 to 0.0), it represents a high ratio of negativity
+        # We can map the -1 to 1 scale to a 0 to 1 negative ratio scale where 1 means 100% negative.
+        # Wait, the pipeline config expects a ratio.
+        # Let's map it: score of -1 => 1.0 (100% negative), score of 1 => 0.0 (0% negative).
+        negative_ratio = (1 - sentiments) / 2
+        
+        logger.info("Sentiment analysis: %.1f%% negative (Score: %s)", negative_ratio * 100, sentiments)
+        return negative_ratio, tweets, [{"score": sentiments}]  # Dummy structure to fulfill type
     except Exception as e:
         logger.error("Failed to check sentiment: %s", e)
         return 0.0, [], []
@@ -51,10 +56,14 @@ def check_sentiment(config: PipelineConfig) -> Tuple[float, List[Any], List[Dict
 def check_volatility(config: PipelineConfig) -> float:
     """Fetch prices and calculate annualized GARCH volatility."""
     try:
-        prices = fetch_eth_prices(days=180)
-        vol = compute_garch_volatility(prices)
+        # get_protocol_volatility in src.models is async and returns a dict
+        vol_data = asyncio.run(get_protocol_volatility(config.protocol_slug, days=180))
+        vol = float(vol_data.get("volatility", 0.0))
+        if "error" in vol_data:
+            logger.warning("Volatility model returned error: %s", vol_data["error"])
+        
         logger.info("Volatility forecast: %.2f%% annualized", vol)
-        return float(vol)
+        return vol
     except Exception as e:
         logger.error("Failed to check volatility: %s", e)
         return 0.0
@@ -63,10 +72,14 @@ def check_volatility(config: PipelineConfig) -> float:
 def check_liquidity(config: PipelineConfig) -> Tuple[float, float, float]:
     """Fetch TVL and forecast the percentage drop over 7 days."""
     try:
-        df = fetch_tvl(config.protocol_slug)
-        forecast = forecast_tvl(df, days=7)
+        # get_tvl_history in src.models is async and returns a DataFrame
+        df = asyncio.run(get_tvl_history(config.protocol_slug, days=90))
+        if df.empty:
+            return 0.0, 0.0, 0.0
+            
         last_tvl = float(df["y"].iloc[-1])
-        predicted_tvl = float(forecast["yhat"].iloc[-1])
+        # forecast_tvl in src.models returns a single float (the yhat value)
+        predicted_tvl = forecast_tvl(df, future_days=7)
 
         drop = (last_tvl - predicted_tvl) / last_tvl if last_tvl > 0 else 0.0
         logger.info(

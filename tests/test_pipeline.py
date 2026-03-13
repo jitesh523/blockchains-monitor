@@ -38,7 +38,7 @@ def test_no_alerts_when_thresholds_not_breached():
          patch("pipeline.check_liquidity") as mock_liq:
 
         # Safe values
-        mock_sent.return_value = (0.5, [], [])
+        mock_sent.return_value = (0.5, [], [{"score": 0.0}])
         mock_vol.return_value = 50.0
         mock_liq.return_value = (0.10, 1000.0, 900.0)
 
@@ -60,7 +60,7 @@ def test_alerts_fire_on_breached_thresholds():
          patch("pipeline.check_liquidity") as mock_liq:
 
         # Breaching values
-        mock_sent.return_value = (0.8, [], [])
+        mock_sent.return_value = (0.8, [], [{"score": -1.0}])
         mock_vol.return_value = 80.0
         mock_liq.return_value = (0.15, 1000.0, 850.0)
 
@@ -82,7 +82,7 @@ def test_pipeline_handles_api_exceptions_gracefully():
          patch("pipeline.check_liquidity") as mock_liq:
 
         # Simulate exception handling returning safe defaults (from the try/except blocks)
-        mock_sent.return_value = (0.0, [], [])
+        mock_sent.return_value = (0.0, [], [{"score": 1.0}])
         mock_vol.return_value = 0.0
         mock_liq.return_value = (0.0, 0.0, 0.0)
 
